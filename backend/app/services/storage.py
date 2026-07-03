@@ -1,17 +1,24 @@
 """S3 storage service — upload URLs, download, and file management."""
 import boto3
+from botocore.client import Config as BotoConfig
 from botocore.exceptions import ClientError
 from app.config import settings
 
 
 class StorageService:
     def __init__(self) -> None:
-        self.client = boto3.client(
-            "s3",
+        # Path-style addressing is required by most non-AWS S3-compatible
+        # endpoints (Supabase Storage, MinIO); AWS itself works fine with it too.
+        client_kwargs: dict = dict(
             aws_access_key_id=settings.aws_access_key_id,
             aws_secret_access_key=settings.aws_secret_access_key,
             region_name=settings.aws_region,
         )
+        if settings.s3_endpoint_url:
+            client_kwargs["endpoint_url"] = settings.s3_endpoint_url
+            client_kwargs["config"] = BotoConfig(s3={"addressing_style": "path"})
+
+        self.client = boto3.client("s3", **client_kwargs)
 
     def generate_upload_url(self, bucket: str, key: str, expiry_seconds: int = 900) -> str:
         """Generate a presigned URL for direct S3 upload from the browser."""

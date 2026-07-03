@@ -1,4 +1,5 @@
 """Users router — profile management."""
+from datetime import datetime
 from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -19,8 +20,13 @@ class UserResponse(BaseModel):
     email: str
     display_name: str | None
     iracing_member_id: str | None
+    experience_level: str | None
+    irating_range: str | None
+    primary_goal: str | None
+    main_frustration: str | None
     subscription_tier: str
     subscription_status: str | None
+    subscription_period_end: datetime | None
     monthly_uploads_used: int
 
     class Config:

@@ -109,7 +109,7 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
         if session is None:
             raise ValueError(f"Session {session_id} not found")
 
-        _mark_processing(db, session, "processing")
+        _mark_processing(db, session, "parsing")
 
         # ── 2. Download .ibt from S3 ──────────────────────────────────────
         from app.services.storage import StorageService
@@ -129,6 +129,7 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
         _update_session_metadata(db, session, parse_result)
 
         # ── 4. Extract features ───────────────────────────────────────────
+        _mark_processing(db, session, "extracting")
         features = self.extractor.extract(parse_result)
         logger.info("Extracted features: %d clean laps", features.clean_lap_count)
 
@@ -159,6 +160,7 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
         )
 
         # ── 6. Coaching engine ────────────────────────────────────────────
+        _mark_processing(db, session, "coaching")
         coaching_output = self.coaching_engine.analyze(
             features=features,
             dna=updated_dna,
@@ -228,7 +230,7 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
 def _mark_processing(db: DbSession, session: SessionModel, status: str) -> None:
     session.processing_status = status
     now = datetime.now(timezone.utc)
-    if status == "processing":
+    if status == "parsing" and session.processing_started_at is None:
         session.processing_started_at = now
     elif status == "completed":
         session.processing_completed_at = now

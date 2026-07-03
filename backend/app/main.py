@@ -1,11 +1,13 @@
 """
 TrackDelta AI — FastAPI Application Entry Point
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import sessions, users, dna
+from app.routers import sessions, users, dna, subscriptions
 
 app = FastAPI(
     title="TrackDelta AI API",
@@ -24,10 +26,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Reformat FastAPI's default {"detail": ...} into the documented
+    {"error": {"code", "message"}} shape (see CLAUDE.md API Conventions)."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": {"code": str(exc.status_code), "message": exc.detail}},
+    )
+
 # Routers
 app.include_router(sessions.router, prefix="/v1")
 app.include_router(users.router, prefix="/v1")
 app.include_router(dna.router, prefix="/v1")
+app.include_router(subscriptions.router, prefix="/v1")
+# Stripe calls this directly — no /v1 prefix, no auth (webhook signature verifies instead).
+app.include_router(subscriptions.webhook_router)
 
 
 @app.get("/health", tags=["meta"])

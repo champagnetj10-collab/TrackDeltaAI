@@ -9,6 +9,10 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+export interface ApiFetchError extends Error {
+  status?: number
+}
+
 // Get auth token from Supabase session
 async function getAuthToken(): Promise<string> {
   const supabase = createClient()
@@ -18,7 +22,7 @@ async function getAuthToken(): Promise<string> {
 }
 
 // Base fetch wrapper with auth
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getAuthToken()
   const res = await fetch(`${API_URL}/v1${path}`, {
     ...options,
@@ -30,8 +34,14 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   })
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: { code: 'unknown', message: res.statusText } }))
+    const body = await res.json().catch(() => ({ error: { code: 'unknown', message: res.statusText } }))
+    const error = new Error(body?.error?.message ?? body?.detail ?? res.statusText) as ApiFetchError
+    error.status = res.status
     throw error
+  }
+
+  if (res.status === 204) {
+    return undefined as T
   }
 
   return res.json()
@@ -89,10 +99,10 @@ export async function getCurrentDNA(): Promise<DriverDNA> {
 
 // --- Subscriptions ---
 
-export async function createCheckoutSession(priceId: string): Promise<{ url: string }> {
+export async function createCheckoutSession(priceId?: string): Promise<{ url: string }> {
   return apiFetch('/subscriptions/checkout', {
     method: 'POST',
-    body: JSON.stringify({ price_id: priceId }),
+    body: JSON.stringify({ price_id: priceId ?? null }),
   })
 }
 

@@ -35,4 +35,7 @@ celery_app.conf.update(
     task_routes={
         "pipeline.tasks.process_session.process_session_task": {"queue": "default"},
     },
+    # Local dev convenience: run tasks synchronously, no broker/worker needed.
+    task_always_eager=settings.celery_task_always_eager,
+    task_eager_propagates=settings.celery_task_always_eager,
 )

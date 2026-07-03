@@ -24,10 +24,10 @@ def get_current_dna(current_user: CurrentUser, db: DB):
         .first()
     )
     if not dna:
-        return {
-            "exists": False,
-            "message": "Upload your first session to start building your Driver DNA.",
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Upload your first session to start building your Driver DNA.",
+        )
     return dna
 
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { createBrowserClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -31,7 +31,7 @@ export default function Navigation() {
   const router = useRouter()
 
   async function handleSignOut() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
   }

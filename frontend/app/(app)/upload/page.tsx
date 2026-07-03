@@ -85,16 +85,15 @@ export default function UploadPage() {
           // Map API status to UI step
           const statusMap: Record<SessionStatus, UploadStep> = {
             pending:    'uploading',
-            uploading:  'uploading',
             parsing:    'parsing',
             extracting: 'extracting',
             coaching:   'coaching',
-            complete:   'complete',
+            completed:  'complete',
             failed:     'error',
           }
           setStep(statusMap[status] ?? 'error')
 
-          if (status === 'complete') {
+          if (status === 'completed') {
             clearInterval(poll)
             clearInterval(interval)
             setTimeout(() => router.push(`/sessions/${session_id}`), 800)

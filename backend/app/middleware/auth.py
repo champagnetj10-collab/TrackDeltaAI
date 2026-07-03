@@ -3,7 +3,7 @@ JWT authentication middleware.
 Validates Supabase JWTs on protected routes and injects the user_id.
 """
 import uuid
-from typing import Optional
+from typing import Any
 from fastapi import HTTPException, Security, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -16,42 +16,64 @@ from app.models.user import User
 security = HTTPBearer()
 
 
-def get_current_user_id(
-    credentials: HTTPAuthorizationCredentials = Security(security),
-) -> uuid.UUID:
-    """
-    Validates the Bearer JWT and returns the authenticated user's UUID.
-    Raises 401 on invalid or expired tokens.
-    """
-    token = credentials.credentials
-
+def _decode_token(credentials: HTTPAuthorizationCredentials) -> dict[str, Any]:
+    """Decode and verify a Supabase-issued JWT. Raises 401 on failure."""
     try:
         # Supabase JWTs are signed with the project JWT secret
-        payload = jwt.decode(
-            token,
+        return jwt.decode(
+            credentials.credentials,
             settings.supabase_jwt_secret,
             algorithms=["HS256"],
             options={"verify_aud": False},
         )
-        user_id_str: Optional[str] = payload.get("sub")
-        if not user_id_str:
-            raise HTTPException(status_code=401, detail="Invalid token: no subject")
-        return uuid.UUID(user_id_str)
-
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}") from e
 
 
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Security(security),
+) -> uuid.UUID:
+    """Validates the Bearer JWT and returns the authenticated user's UUID."""
+    payload = _decode_token(credentials)
+    user_id_str = payload.get("sub")
+    if not user_id_str:
+        raise HTTPException(status_code=401, detail="Invalid token: no subject")
+    return uuid.UUID(user_id_str)
+
+
 def get_current_user(
-    user_id: uuid.UUID = Depends(get_current_user_id),
+    credentials: HTTPAuthorizationCredentials = Security(security),
     db: Session = Depends(get_db),
 ) -> User:
     """
     Returns the full User record for the authenticated user.
-    Auto-creates the user record on first login (Supabase handles auth;
-    we sync to our own users table on first API call).
+
+    Supabase handles auth directly (the frontend never talks to our API to
+    register) — so the first time a valid Supabase JWT reaches any endpoint,
+    we sync it into our own `users` table if a row doesn't exist yet. Email
+    and display name are pulled straight from the verified JWT claims.
     """
+    payload = _decode_token(credentials)
+    user_id_str = payload.get("sub")
+    if not user_id_str:
+        raise HTTPException(status_code=401, detail="Invalid token: no subject")
+    user_id = uuid.UUID(user_id_str)
+
     user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User record not found. Complete registration first.")
+    if user is not None:
+        return user
+
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token: no email claim")
+
+    user_metadata = payload.get("user_metadata") or {}
+    user = User(
+        id=user_id,
+        email=email,
+        display_name=user_metadata.get("display_name"),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user

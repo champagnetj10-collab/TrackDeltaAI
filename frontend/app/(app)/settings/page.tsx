@@ -44,17 +44,22 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    apiFetch<User>('/users/me').then(u => {
-      setUser(u)
-      setDisplayName(u.display_name ?? '')
-      setIracingMemberId(u.iracing_member_id ?? '')
-      setExperienceLevel(u.experience_level ?? '')
-      setIratingRange(u.irating_range ?? '')
-      setPrimaryGoal(u.primary_goal ?? '')
-      setMainFrustration(u.main_frustration ?? '')
-    })
+    apiFetch<User>('/users/me')
+      .then(u => {
+        setUser(u)
+        setDisplayName(u.display_name ?? '')
+        setIracingMemberId(u.iracing_member_id ?? '')
+        setExperienceLevel(u.experience_level ?? '')
+        setIratingRange(u.irating_range ?? '')
+        setPrimaryGoal(u.primary_goal ?? '')
+        setMainFrustration(u.main_frustration ?? '')
+      })
+      .catch(err => setLoadError(err?.message ?? 'Failed to load account'))
+      .finally(() => setLoading(false))
   }, [])
 
   async function handleSave(e: React.FormEvent) {
@@ -83,9 +88,25 @@ export default function SettingsPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+        <div className="h-8 bg-delta-800 rounded w-32 animate-pulse" />
+        <div className="h-64 bg-delta-900 rounded-xl animate-pulse" />
+        <div className="h-64 bg-delta-900 rounded-xl animate-pulse" />
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
       <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
+
+      {loadError && (
+        <div className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 mb-6">
+          <p className="text-red-400 text-sm">{loadError}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSave} className="space-y-8">
 

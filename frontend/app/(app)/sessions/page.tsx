@@ -9,7 +9,9 @@ import { formatLapTime, formatSessionType } from '@/lib/utils'
 
 const STATUS_STYLES: Record<string, string> = {
   completed: 'bg-emerald-950 text-emerald-400 border-emerald-800',
-  processing: 'bg-delta-950 text-delta-400 border-delta-800 animate-pulse',
+  parsing: 'bg-delta-950 text-delta-400 border-delta-800 animate-pulse',
+  extracting: 'bg-delta-950 text-delta-400 border-delta-800 animate-pulse',
+  coaching: 'bg-delta-950 text-delta-400 border-delta-800 animate-pulse',
   pending: 'bg-delta-950 text-delta-500 border-delta-800',
   failed: 'bg-red-950 text-red-400 border-red-800',
 }

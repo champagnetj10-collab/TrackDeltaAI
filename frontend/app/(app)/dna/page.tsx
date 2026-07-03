@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { AlertCircle, TrendingUp, Zap } from 'lucide-react'
-import { getCurrentDNA } from '@/lib/api'
-import { DriverDNA, ConfidenceLevel } from '@/types'
+import { getCurrentDNA, ApiFetchError } from '@/lib/api'
+import { DriverDNA } from '@/types'
 import { CONFIDENCE_LABELS, CONFIDENCE_PIPS } from '@/lib/utils'
 
 const ATTR_LABELS: Record<string, string> = {
@@ -34,7 +34,13 @@ export default function DnaPage() {
   useEffect(() => {
     getCurrentDNA()
       .then(setDna)
-      .catch(err => setError(err?.message ?? 'Failed to load DNA'))
+      .catch((err: ApiFetchError) => {
+        if (err?.status === 404) {
+          setDna(null)
+          return
+        }
+        setError(err?.message ?? 'Failed to load DNA')
+      })
       .finally(() => setLoading(false))
   }, [])
 

@@ -9,21 +9,28 @@ export interface User {
   email: string
   display_name: string | null
   iracing_member_id: string | null
+  experience_level: string | null
+  irating_range: string | null
+  primary_goal: string | null
+  main_frustration: string | null
   subscription_tier: 'free' | 'pro'
   subscription_status: string | null
+  subscription_period_end: string | null
   monthly_uploads_used: number
-  created_at: string
 }
 
 // --- Sessions ---
 
+// Matches the real backend state machine (pipeline/tasks/process_session.py):
+// pending (created) -> parsing -> extracting -> coaching -> completed | failed
+// 'uploading' is a frontend-only pre-API state (see UploadStep in upload/page.tsx),
+// not a value the backend ever reports.
 export type SessionStatus =
   | 'pending'
-  | 'uploading'
   | 'parsing'
   | 'extracting'
   | 'coaching'
-  | 'complete'
+  | 'completed'
   | 'failed'
 
 export type SessionType = 'practice' | 'qualifying' | 'race' | 'time_trial'
@@ -52,16 +59,16 @@ export interface Session {
 
 export type ConfidenceLevel = 'very_low' | 'low' | 'moderate' | 'high' | 'very_high'
 
-export type BrakingStyle = 'LATE' | 'EARLY' | 'TRAIL' | 'NEUTRAL'
-export type ThrottleStyle = 'AGGRESSIVE' | 'SMOOTH' | 'LATE' | 'EARLY' | 'NEUTRAL'
-export type RiskProfile = 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE' | 'ERRATIC'
-export type PressureProfile = 'STRONG' | 'NEUTRAL' | 'AFFECTED'
-export type LearningStyle = 'OBJECTIVE_FOCUSED' | 'DATA_DRIVEN' | 'INTUITIVE' | 'MIXED'
-
-export interface DNAAttribute<T> {
-  value: T
-  confidence: ConfidenceLevel
-  confidence_score: number  // 0.0 – 1.0
+// Each DNA attribute is a flat dict of EWMA'd numeric fields plus a
+// classification label under a category-specific key (style/tier/profile)
+// and a 0-1 confidence score — see pipeline/dna/dna_engine.py.
+export interface DnaAttribute {
+  confidence: number
+  style?: string
+  tier?: string
+  profile?: string
+  score?: number
+  [key: string]: unknown
 }
 
 export interface DriverDNA {
@@ -72,114 +79,76 @@ export interface DriverDNA {
   total_sessions: number
   total_clean_laps: number
   overall_confidence: number
-
-  braking: {
-    style: DNAAttribute<BrakingStyle>
-    mean_brake_delta_m: DNAAttribute<number>
-    trail_braking_usage_pct: DNAAttribute<number>
-    brake_consistency: DNAAttribute<number>
-  }
-
-  throttle: {
-    style: DNAAttribute<ThrottleStyle>
-    throttle_ramp_rate_mean: DNAAttribute<number>
-    throttle_consistency: DNAAttribute<number>
-  }
-
-  steering: {
-    smoothness_mean: DNAAttribute<number>
-    entry_commitment: DNAAttribute<number>
-  }
-
-  consistency: {
-    overall_score: DNAAttribute<number>  // 0–10
-    hot_lap_pct_mean: DNAAttribute<number>
-  }
-
-  risk: {
-    classification: DNAAttribute<RiskProfile>
-    incident_rate: DNAAttribute<number>
-  }
-
-  pressure: {
-    classification: DNAAttribute<PressureProfile>
-  }
-
-  learning: {
-    style: DNAAttribute<LearningStyle>
-  }
+  braking: DnaAttribute
+  throttle: DnaAttribute
+  steering: DnaAttribute
+  consistency: DnaAttribute
+  risk: DnaAttribute
+  pressure: DnaAttribute
+  learning: DnaAttribute
+  track_profiles: Record<string, unknown>
 }
 
 // --- Debriefs ---
+// Matches CoachingOutput -> DeltaVoice's actual JSON schema
+// (pipeline/llm/delta_voice.py DEBRIEF_SCHEMA_DESCRIPTION), which is what's
+// actually stored in debriefs.debrief_content.
 
-export interface TimeAvailableEstimate {
-  estimate_ms_min: number
-  estimate_ms_max: number
-  confidence: ConfidenceLevel
-  explanation: string
-  suppressed: boolean
-  suppression_reason: string | null
-}
-
-export interface Opportunity {
-  rank: number
-  corner_id: string | null
-  corner_name: string
-  observation: string
-  impact: string
-  estimated_time_ms_min: number
-  estimated_time_ms_max: number
-  time_confidence: ConfidenceLevel
-  recommendation: string
-}
-
-export interface Strength {
-  rank: number
-  area: string
-  observation: string
-  evidence: string
-}
-
-export interface PracticePlanItem {
-  rank: number
+export interface DebriefOpportunity {
+  id: string
+  category: string
   title: string
-  detail: string
-  estimated_sessions_to_improve: number
+  delta_commentary: string
+  data_evidence: string
+  practice_drill: string
+  estimated_gain_ms: number
+  confidence: number
+  confidence_label: string
 }
 
-export interface DNAUpdateSummary {
-  text: string
-  attributes_updated: string[]
-  confidence_changes: Array<{
-    attribute: string
-    from: ConfidenceLevel
-    to: ConfidenceLevel
-  }>
+export interface DebriefStrength {
+  category: string
+  title: string
+  delta_commentary: string
+}
+
+export interface DebriefPracticePlanItem {
+  order: number
+  drill: string
+  target_corners: string[]
+  success_metric: string
+  estimated_time_min: number
+}
+
+export interface DebriefContent {
+  version: string
+  headline: string
+  session_overview: string
+  opportunities: DebriefOpportunity[]
+  strengths: DebriefStrength[]
+  practice_plan: DebriefPracticePlanItem[]
+  dna_update: {
+    sessions_count: number
+    is_cold_start: boolean
+    delta_message: string
+  }
+  lap_chart: {
+    laps: Array<[number, number]>
+    best_lap: number
+  }
 }
 
 export interface Debrief {
   id: string
   session_id: string
   created_at: string
-  dna_confidence_at_debrief: number
-
-  session_header: {
-    track_name: string
-    car_name: string
-    session_type: SessionType
-    best_lap_time_ms: number
-    total_laps: number
-    clean_laps: number
-    session_consistency_pct: number
-  }
-
-  delta_overview: { text: string }
-  opportunities: Opportunity[]
-  strengths: Strength[]
-  time_available: TimeAvailableEstimate
-  dna_update: DNAUpdateSummary
-  practice_plan: PracticePlanItem[]
-  one_clear_objective: { text: string }
+  debrief_content: DebriefContent
+  dna_version_id: string | null
+  dna_confidence_at_debrief: number | null
+  llm_model_used: string | null
+  llm_prompt_tokens: number | null
+  llm_completion_tokens: number | null
+  llm_total_cost_usd: number | null
 }
 
 // --- API Responses ---
