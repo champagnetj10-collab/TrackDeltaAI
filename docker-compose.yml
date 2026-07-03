@@ -1,0 +1,120 @@
+version: "3.9"
+
+# TrackDelta local development stack
+# Usage:
+#   docker compose up              # all services
+#   docker compose up api worker   # api + worker only (uses hosted postgres)
+#   docker compose up -d postgres redis  # start backing services only
+
+services:
+
+  # ── Backing services ──────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: trackdelta
+      POSTGRES_PASSWORD: trackdelta
+      POSTGRES_DB: trackdelta
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trackdelta"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Application services ──────────────────────────────────────────────────
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app        # live reload in dev
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://trackdelta:trackdelta@postgres:5432/trackdelta
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A pipeline.worker worker --loglevel=info --queues=default
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://trackdelta:trackdelta@postgres:5432/trackdelta
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Dev utilities ─────────────────────────────────────────────────────────
+
+  migrate:
+    # Run once to apply Alembic migrations:
+    #   docker compose run --rm migrate
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://trackdelta:trackdelta@postgres:5432/trackdelta
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
+  flower:
+    # Celery task monitor at http://localhost:5555
+    #   docker compose --profile tools up flower
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A pipeline.worker flower --port=5555
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  redis_data:

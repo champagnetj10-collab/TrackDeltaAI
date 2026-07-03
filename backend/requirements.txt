@@ -1,0 +1,49 @@
+# Web framework
+fastapi==0.111.1
+uvicorn[standard]==0.30.3
+gunicorn==22.0.0
+
+# Data validation
+pydantic==2.8.2
+pydantic-settings==2.3.4
+
+# Database
+sqlalchemy==2.0.31
+alembic==1.13.2
+asyncpg==0.29.0           # async PostgreSQL driver
+psycopg2-binary==2.9.9    # sync driver for Alembic
+
+# Auth (Supabase JWT verification)
+python-jose[cryptography]==3.3.0
+httpx==0.27.0
+
+# Task queue
+celery==5.4.0
+redis==5.0.7
+
+# AWS S3
+boto3==1.34.144
+
+# Anthropic (Delta's voice)
+anthropic==0.30.1
+
+# Stripe
+stripe==10.3.0
+
+# Email
+resend==2.1.0
+
+# Data processing (pipeline)
+numpy==2.0.0
+pandas==2.2.2
+scipy==1.14.0
+pyyaml==6.0.1
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7
+httpx==0.27.0             # for TestClient
+
+# Dev tooling
+ruff==0.5.1               # linting + formatting
+mypy==1.10.1              # type checking
