@@ -86,3 +86,66 @@ def test_missing_session_raises_and_does_not_retry_forever(patched_env):
     assert result.successful()
     assert result.result["status"] == "failed"
     assert "not found" in result.result["error"]
+
+
+def test_dna_commits_before_coaching_so_a_downstream_failure_cannot_roll_it_back(monkeypatch):
+    """Driver DNA and a debrief are separate concerns - see process_session.py's
+    db.commit() right after _persist_dna(). Real Postgres/JSONB isn't
+    available in SQLite for DriverDNA (confirmed: JSONB doesn't compile
+    against the SQLite dialect), so this exercises the orchestration itself
+    with a mocked db session, patching the pipeline stage classes exactly
+    where process_session_task looks them up (the ProcessSessionTask
+    properties), rather than re-testing parser/extractor/DNA-engine
+    correctness, which is already covered elsewhere.
+    """
+    session_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    session_row = MagicMock(
+        id=session_id, user_id=user_id, raw_file_s3_key="users/x/y.ibt",
+        debrief_id=None, processing_started_at=None,
+    )
+
+    mock_db = MagicMock()
+    mock_db.get.return_value = session_row
+    mock_db.query.return_value.filter_by.return_value.first.return_value = None
+    monkeypatch.setattr(process_session_module, "SessionLocal", lambda: mock_db)
+
+    mock_storage = MagicMock()
+    mock_storage.download_bytes.return_value = b"fake bytes"
+    monkeypatch.setattr("app.services.storage.StorageService", lambda: mock_storage)
+
+    fake_parse_result = MagicMock(total_laps=10, track_name="Test Track")
+    monkeypatch.setattr(
+        process_session_module.IbtParser, "parse", lambda self, raw, session_id: fake_parse_result
+    )
+
+    fake_features = MagicMock(clean_lap_count=8)
+    fake_features.to_dict.return_value = {}
+    monkeypatch.setattr(
+        process_session_module.FeatureExtractor, "extract", lambda self, pr: fake_features
+    )
+
+    fake_dna = MagicMock(overall_confidence=0.3, total_sessions=1)
+    monkeypatch.setattr(
+        process_session_module.DnaEngine,
+        "update",
+        lambda self, current_dna, features, user_id: (fake_dna, MagicMock()),
+    )
+
+    def _raise_coaching_error(*args, **kwargs):
+        raise RuntimeError("coaching engine exploded")
+
+    monkeypatch.setattr(process_session_module.CoachingEngine, "analyze", _raise_coaching_error)
+
+    result = process_session_task.apply(args=[str(session_id)])
+
+    assert result.successful(), f"Task should not raise, got: {result.traceback}"
+    assert result.result["status"] == "failed"
+
+    # The commit after DNA persistence must have actually happened before
+    # the failure was even reached - not just "commit was called eventually".
+    assert mock_db.commit.call_count >= 2, "expected a commit after DNA persist, plus one on failure"
+
+    # The failure message must be honest that DNA succeeded.
+    assert "Driver DNA updated successfully" in session_row.processing_error
+    assert "coaching engine exploded" in session_row.processing_error

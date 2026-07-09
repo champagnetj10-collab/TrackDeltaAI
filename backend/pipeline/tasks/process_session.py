@@ -103,6 +103,7 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
     logger.info("process_session_task started | session_id=%s", session_id)
 
     db: DbSession = SessionLocal()
+    dna_persisted = False
     try:
         # ── 1. Load session record ────────────────────────────────────────
         session: SessionModel | None = db.get(SessionModel, uuid.UUID(session_id))
@@ -153,8 +154,15 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
             user_id=str(session.user_id),
         )
         _persist_dna(db, session, current_dna, updated_dna)
+        # Commit here, independent of the coaching/LLM stages below: a driver's
+        # Driver DNA update must not be lost just because debrief narration
+        # fails downstream (e.g. the LLM API is unavailable or unconfigured).
+        # "Storing the data" and "generating the narrative debrief" are
+        # separate concerns - only the latter depends on Anthropic.
+        db.commit()
+        dna_persisted = True
         logger.info(
-            "DNA updated | confidence=%.2f total_sessions=%d",
+            "DNA updated and persisted | confidence=%.2f total_sessions=%d",
             updated_dna.overall_confidence,
             updated_dna.total_sessions,
         )
@@ -210,12 +218,20 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
 
     except Exception as exc:
         logger.exception("process_session_task failed | session_id=%s", session_id)
-        # Mark session as failed in DB
+        # Mark session as failed in DB. If Driver DNA already committed above,
+        # say so explicitly - a coaching/LLM failure downstream doesn't mean
+        # the driver's DNA update was lost.
         try:
             session_obj = db.get(SessionModel, uuid.UUID(session_id))
             if session_obj:
                 session_obj.processing_status = "failed"
-                session_obj.processing_error = str(exc)
+                if dna_persisted:
+                    session_obj.processing_error = (
+                        f"Driver DNA updated successfully, but the coaching debrief "
+                        f"could not be generated: {exc}"
+                    )
+                else:
+                    session_obj.processing_error = str(exc)
                 db.commit()
         except Exception:
             pass
