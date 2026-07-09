@@ -1,9 +1,20 @@
 """
 JWT authentication middleware.
 Validates Supabase JWTs on protected routes and injects the user_id.
+
+Supabase projects created after their asymmetric-keys rollout sign access
+tokens with ES256 using a per-project JWKS (no shared secret exists to
+configure) rather than the legacy HS256 + static "JWT secret" scheme. This
+verifies against whichever the project actually uses: if
+SUPABASE_JWT_SECRET is configured, HS256 is used (legacy projects);
+otherwise the JWKS published at {SUPABASE_URL}/auth/v1/.well-known/jwks.json
+is fetched, cached, and used for ES256 verification (current projects).
 """
+import time
 import uuid
 from typing import Any
+
+import httpx
 from fastapi import HTTPException, Security, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -15,17 +26,57 @@ from app.models.user import User
 
 security = HTTPBearer()
 
+_JWKS_CACHE_TTL_S = 3600
+_jwks_cache: dict[str, Any] = {"keys": [], "fetched_at": 0.0}
+
+
+def _fetch_jwks(force: bool = False) -> list[dict[str, Any]]:
+    now = time.monotonic()
+    if force or not _jwks_cache["keys"] or (now - _jwks_cache["fetched_at"]) > _JWKS_CACHE_TTL_S:
+        url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+        response = httpx.get(url, timeout=5.0)
+        response.raise_for_status()
+        _jwks_cache["keys"] = response.json().get("keys", [])
+        _jwks_cache["fetched_at"] = now
+    return _jwks_cache["keys"]
+
+
+def _find_jwk(kid: str | None) -> dict[str, Any] | None:
+    for key in _fetch_jwks():
+        if key.get("kid") == kid:
+            return key
+    # Key rotation: refetch once in case a new signing key was published.
+    for key in _fetch_jwks(force=True):
+        if key.get("kid") == kid:
+            return key
+    return None
+
 
 def _decode_token(credentials: HTTPAuthorizationCredentials) -> dict[str, Any]:
     """Decode and verify a Supabase-issued JWT. Raises 401 on failure."""
+    token = credentials.credentials
+
+    if settings.supabase_jwt_secret:
+        try:
+            return jwt.decode(
+                token, settings.supabase_jwt_secret,
+                algorithms=["HS256"], options={"verify_aud": False},
+            )
+        except JWTError as e:
+            raise HTTPException(status_code=401, detail=f"Invalid token: {e}") from e
+
     try:
-        # Supabase JWTs are signed with the project JWT secret
-        return jwt.decode(
-            credentials.credentials,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
-            options={"verify_aud": False},
-        )
+        header = jwt.get_unverified_header(token)
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}") from e
+
+    alg = header.get("alg", "ES256")
+    jwk = _find_jwk(header.get("kid"))
+    if jwk is None:
+        raise HTTPException(status_code=401, detail="Invalid token: unknown signing key")
+
+    try:
+        return jwt.decode(token, jwk, algorithms=[alg], options={"verify_aud": False})
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}") from e
 

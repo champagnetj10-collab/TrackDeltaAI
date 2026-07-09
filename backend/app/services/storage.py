@@ -1,79 +1,88 @@
-"""S3 storage service — upload URLs, download, and file management."""
-import boto3
-from botocore.client import Config as BotoConfig
-from botocore.exceptions import ClientError
+"""Storage service — upload URLs, download, and file management.
+
+Backed by Supabase Storage's native REST API (not S3) using the project's
+service_role key — this avoids needing a separate S3-compatible credential
+pair; the same Supabase project covers auth, database, and file storage.
+Public method signatures are unchanged from the original boto3-based
+implementation so callers (sessions router, process_session task) don't
+need to change.
+"""
+from __future__ import annotations
+
+import httpx
+
 from app.config import settings
+
+
+class StorageError(Exception):
+    """Raised when a Supabase Storage API call fails unexpectedly."""
 
 
 class StorageService:
     def __init__(self) -> None:
-        # Path-style addressing is required by most non-AWS S3-compatible
-        # endpoints (Supabase Storage, MinIO); AWS itself works fine with it too.
-        client_kwargs: dict = dict(
-            aws_access_key_id=settings.aws_access_key_id,
-            aws_secret_access_key=settings.aws_secret_access_key,
-            region_name=settings.aws_region,
+        self._base_url = settings.supabase_url.rstrip("/") + "/storage/v1"
+        self._client = httpx.Client(
+            headers={
+                "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                "apikey": settings.supabase_service_role_key,
+            },
+            timeout=30.0,
         )
-        if settings.s3_endpoint_url:
-            client_kwargs["endpoint_url"] = settings.s3_endpoint_url
-            client_kwargs["config"] = BotoConfig(s3={"addressing_style": "path"})
-
-        self.client = boto3.client("s3", **client_kwargs)
 
     def generate_upload_url(self, bucket: str, key: str, expiry_seconds: int = 900) -> str:
-        """Generate a presigned URL for direct S3 upload from the browser."""
-        url: str = self.client.generate_presigned_url(
-            "put_object",
-            Params={"Bucket": bucket, "Key": key, "ContentType": "application/octet-stream"},
-            ExpiresIn=expiry_seconds,
-        )
-        return url
+        """Generate a signed URL the browser can PUT directly to."""
+        response = self._client.post(f"{self._base_url}/object/upload/sign/{bucket}/{key}", json={})
+        if response.status_code >= 400:
+            raise StorageError(f"Failed to sign upload URL: {response.status_code} {response.text}")
+        relative_url = response.json()["url"]
+        return f"{self._base_url}{relative_url}"
 
     def generate_download_url(self, bucket: str, key: str, expiry_seconds: int = 3600) -> str:
-        """Generate a presigned URL for downloading a file."""
-        url: str = self.client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket, "Key": key},
-            ExpiresIn=expiry_seconds,
+        """Generate a signed URL for downloading a file."""
+        response = self._client.post(
+            f"{self._base_url}/object/sign/{bucket}/{key}",
+            json={"expiresIn": expiry_seconds},
         )
-        return url
+        if response.status_code >= 400:
+            raise StorageError(f"Failed to sign download URL: {response.status_code} {response.text}")
+        relative_url = response.json()["signedURL"]
+        return f"{self._base_url}{relative_url}"
 
     def download_file(self, bucket: str, key: str, local_path: str) -> None:
-        """Download a file from S3 to local disk (used in pipeline workers)."""
-        self.client.download_file(bucket, key, local_path)
+        """Download a file from storage to local disk (used in pipeline workers)."""
+        with open(local_path, "wb") as f:
+            f.write(self.download_bytes(bucket, key))
 
     def download_bytes(self, bucket: str, key: str) -> bytes:
-        """Download an object directly into memory (used by the processing pipeline,
-        which needs the raw .ibt bytes in hand rather than a path on disk)."""
-        response = self.client.get_object(Bucket=bucket, Key=key)
-        return response["Body"].read()
+        """Download an object directly into memory (used by the processing
+        pipeline, which needs the raw .ibt bytes in hand)."""
+        response = self._client.get(f"{self._base_url}/object/{bucket}/{key}")
+        if response.status_code >= 400:
+            raise StorageError(f"Failed to download {bucket}/{key}: {response.status_code} {response.text}")
+        return response.content
 
     def upload_json(self, bucket: str, key: str, data: str) -> None:
-        """Upload a JSON string to S3 (for processed features / debriefs)."""
-        self.client.put_object(
-            Bucket=bucket,
-            Key=key,
-            Body=data.encode("utf-8"),
-            ContentType="application/json",
+        """Upload a JSON string to storage (for processed features / debriefs)."""
+        response = self._client.post(
+            f"{self._base_url}/object/{bucket}/{key}",
+            content=data.encode("utf-8"),
+            headers={"Content-Type": "application/json", "x-upsert": "true"},
         )
+        if response.status_code >= 400:
+            raise StorageError(f"Failed to upload {bucket}/{key}: {response.status_code} {response.text}")
 
     def file_exists(self, bucket: str, key: str) -> bool:
-        """Check if a key exists in S3."""
-        try:
-            self.client.head_object(Bucket=bucket, Key=key)
-            return True
-        except ClientError:
-            return False
+        """Check if a key exists in storage."""
+        response = self._client.head(f"{self._base_url}/object/{bucket}/{key}")
+        return response.status_code == 200
 
     def get_object_size(self, bucket: str, key: str) -> int | None:
-        """Return the size in bytes of an S3 object, or None if it doesn't exist.
-
-        Used to validate an upload actually landed (and is within size
-        limits) before enqueueing processing — the presigned PUT URL itself
-        can't enforce a max size, so this is the server-side check.
-        """
-        try:
-            response = self.client.head_object(Bucket=bucket, Key=key)
-        except ClientError:
+        """Return the size in bytes of a storage object, or None if it doesn't
+        exist. Used to validate an upload actually landed (and is within size
+        limits) before enqueueing processing — the signed upload URL itself
+        can't enforce a max size."""
+        response = self._client.head(f"{self._base_url}/object/{bucket}/{key}")
+        if response.status_code != 200:
             return None
-        return response["ContentLength"]
+        content_length = response.headers.get("content-length")
+        return int(content_length) if content_length is not None else None

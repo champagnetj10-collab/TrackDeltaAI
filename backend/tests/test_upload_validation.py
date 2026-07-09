@@ -64,7 +64,12 @@ def test_upload_url_rejects_non_ibt_filename(client):
     assert "iRacing telemetry file" in response.json()["error"]["message"]
 
 
-def test_upload_url_accepts_ibt_filename(client):
+def test_upload_url_accepts_ibt_filename(client, monkeypatch):
+    monkeypatch.setattr(
+        sessions_module.StorageService,
+        "generate_upload_url",
+        lambda self, bucket, key, expiry_seconds=900: f"https://storage.example/{bucket}/{key}",
+    )
     response = client.post("/v1/sessions/upload-url", json={"filename": "practice.ibt"})
     assert response.status_code == 200
     body = response.json()
@@ -72,7 +77,12 @@ def test_upload_url_accepts_ibt_filename(client):
     assert body["presigned_url"].startswith("http")
 
 
-def test_upload_url_extension_check_is_case_insensitive(client):
+def test_upload_url_extension_check_is_case_insensitive(client, monkeypatch):
+    monkeypatch.setattr(
+        sessions_module.StorageService,
+        "generate_upload_url",
+        lambda self, bucket, key, expiry_seconds=900: f"https://storage.example/{bucket}/{key}",
+    )
     response = client.post("/v1/sessions/upload-url", json={"filename": "PRACTICE.IBT"})
     assert response.status_code == 200
 

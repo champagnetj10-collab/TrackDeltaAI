@@ -32,17 +32,10 @@ class Settings(BaseSettings):
     # --- JWT (Supabase signs with this secret) ---
     supabase_jwt_secret: str = ""  # Set in production
 
-    # --- AWS S3 ---
-    aws_access_key_id: str
-    aws_secret_access_key: str
-    aws_region: str = "us-east-1"
+    # --- File storage (Supabase Storage buckets — see app/services/storage.py) ---
     s3_bucket_telemetry: str = "trackdelta-raw-telemetry"
     s3_bucket_processed: str = "trackdelta-processed-features"
     s3_bucket_debriefs: str = "trackdelta-debriefs"
-    # Optional: point boto3 at any S3-compatible endpoint instead of AWS —
-    # e.g. Supabase Storage's S3 API, or a local MinIO instance for dev.
-    # Leave unset to use real AWS S3.
-    s3_endpoint_url: str | None = None
 
     # --- Anthropic ---
     anthropic_api_key: str
