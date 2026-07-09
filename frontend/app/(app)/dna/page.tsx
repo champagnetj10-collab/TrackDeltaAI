@@ -32,16 +32,20 @@ export default function DnaPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    setError(null)
     getCurrentDNA()
-      .then(setDna)
+      .then(data => { if (!cancelled) setDna(data) })
       .catch((err: ApiFetchError) => {
+        if (cancelled) return
         if (err?.status === 404) {
           setDna(null)
           return
         }
         setError(err?.message ?? 'Failed to load DNA')
       })
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {

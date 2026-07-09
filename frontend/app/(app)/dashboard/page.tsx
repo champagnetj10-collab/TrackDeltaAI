@@ -14,13 +14,21 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    setError(null)
     Promise.all([apiFetch<User>('/users/me'), getSessions()])
       .then(([u, sessions]) => {
+        if (cancelled) return
         setUser(u)
         setRecentSession(sessions[0] ?? null)
       })
-      .catch(err => setError(err?.message ?? 'Failed to load dashboard'))
-      .finally(() => setLoading(false))
+      .catch(err => {
+        if (!cancelled) setError(err?.message ?? 'Failed to load dashboard')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {

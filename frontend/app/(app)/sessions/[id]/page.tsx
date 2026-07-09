@@ -28,13 +28,17 @@ export default function SessionDebriefPage() {
 
   useEffect(() => {
     if (!id) return
+    let cancelled = false
+    setError(null)
     Promise.all([getSession(id), getDebrief(id)])
       .then(([s, d]) => {
+        if (cancelled) return
         setSession(s)
         setDebrief(d)
       })
-      .catch(err => setError(err?.message ?? 'Failed to load debrief'))
-      .finally(() => setLoading(false))
+      .catch(err => { if (!cancelled) setError(err?.message ?? 'Failed to load debrief') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [id])
 
   if (loading) {

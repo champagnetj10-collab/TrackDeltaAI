@@ -22,10 +22,13 @@ export default function SessionsPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    setError(null)
     getSessions()
-      .then(setSessions)
-      .catch(err => setError(err?.message ?? 'Failed to load sessions'))
-      .finally(() => setLoading(false))
+      .then(data => { if (!cancelled) setSessions(data) })
+      .catch(err => { if (!cancelled) setError(err?.message ?? 'Failed to load sessions') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {

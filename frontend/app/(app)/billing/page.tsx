@@ -28,10 +28,13 @@ export default function BillingPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    setError(null)
     apiFetch<User>('/users/me')
-      .then(setUser)
-      .catch(err => setError(err?.message ?? 'Failed to load account'))
-      .finally(() => setLoading(false))
+      .then(u => { if (!cancelled) setUser(u) })
+      .catch(err => { if (!cancelled) setError(err?.message ?? 'Failed to load account') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   async function handleUpgrade() {

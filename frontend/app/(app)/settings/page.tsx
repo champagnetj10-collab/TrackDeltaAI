@@ -48,8 +48,11 @@ export default function SettingsPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    setLoadError(null)
     apiFetch<User>('/users/me')
       .then(u => {
+        if (cancelled) return
         setUser(u)
         setDisplayName(u.display_name ?? '')
         setIracingMemberId(u.iracing_member_id ?? '')
@@ -58,8 +61,9 @@ export default function SettingsPage() {
         setPrimaryGoal(u.primary_goal ?? '')
         setMainFrustration(u.main_frustration ?? '')
       })
-      .catch(err => setLoadError(err?.message ?? 'Failed to load account'))
-      .finally(() => setLoading(false))
+      .catch(err => { if (!cancelled) setLoadError(err?.message ?? 'Failed to load account') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   async function handleSave(e: React.FormEvent) {
