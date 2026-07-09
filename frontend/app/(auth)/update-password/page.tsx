@@ -109,7 +109,7 @@ export default function UpdatePasswordPage() {
             </div>
 
             {error && (
-              <div className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
+              <div role="alert" className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}

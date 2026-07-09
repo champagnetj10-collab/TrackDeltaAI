@@ -59,7 +59,7 @@ export default function SessionDebriefPage() {
   if (error || !session || !debrief) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="bg-red-950 border border-red-800 rounded-xl px-6 py-5 flex items-start gap-3">
+        <div role="alert" className="bg-red-950 border border-red-800 rounded-xl px-6 py-5 flex items-start gap-3">
           <AlertCircle size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-red-300 font-medium">Unable to load debrief</p>

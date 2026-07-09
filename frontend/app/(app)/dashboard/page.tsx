@@ -56,7 +56,7 @@ export default function DashboardPage() {
       </div>
 
       {error && (
-        <div className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 flex items-start gap-3">
+        <div role="alert" className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 flex items-start gap-3">
           <AlertCircle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
           <p className="text-red-300 text-sm">{error}</p>
         </div>
@@ -162,7 +162,7 @@ function RecentSessionCard({ session }: { session: Session }) {
           </Link>
         )}
         {isFailed && (
-          <div className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
+          <div role="alert" className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
             <p className="text-red-400 text-sm">
               {session.processing_error ?? 'Processing failed.'}
             </p>

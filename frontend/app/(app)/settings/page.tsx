@@ -107,7 +107,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
 
       {loadError && (
-        <div className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 mb-6">
+        <div role="alert" className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 mb-6">
           <p className="text-red-400 text-sm">{loadError}</p>
         </div>
       )}
@@ -120,8 +120,9 @@ export default function SettingsPage() {
             Profile
           </h2>
           <div className="space-y-4">
-            <Field label="Display name">
+            <Field id="displayName" label="Display name">
               <input
+                id="displayName"
                 type="text"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
@@ -129,8 +130,9 @@ export default function SettingsPage() {
                 placeholder="Your name"
               />
             </Field>
-            <Field label="iRacing Member ID">
+            <Field id="iracingMemberId" label="iRacing Member ID">
               <input
+                id="iracingMemberId"
                 type="text"
                 value={iracingMemberId}
                 onChange={e => setIracingMemberId(e.target.value)}
@@ -155,32 +157,36 @@ export default function SettingsPage() {
             Help Delta understand your background so it can personalise coaching from your first session.
           </p>
           <div className="space-y-4">
-            <Field label="Experience level">
+            <Field id="experienceLevel" label="Experience level">
               <Select
+                id="experienceLevel"
                 value={experienceLevel}
                 onChange={setExperienceLevel}
                 options={EXPERIENCE_OPTIONS}
                 placeholder="Select level"
               />
             </Field>
-            <Field label="iRating range">
+            <Field id="iratingRange" label="iRating range">
               <Select
+                id="iratingRange"
                 value={iratingRange}
                 onChange={setIratingRange}
                 options={IRATING_OPTIONS}
                 placeholder="Select range"
               />
             </Field>
-            <Field label="Primary goal">
+            <Field id="primaryGoal" label="Primary goal">
               <Select
+                id="primaryGoal"
                 value={primaryGoal}
                 onChange={setPrimaryGoal}
                 options={GOAL_OPTIONS}
                 placeholder="Select goal"
               />
             </Field>
-            <Field label="Biggest frustration">
+            <Field id="mainFrustration" label="Biggest frustration">
               <Select
+                id="mainFrustration"
                 value={mainFrustration}
                 onChange={setMainFrustration}
                 options={FRUSTRATION_OPTIONS}
@@ -192,7 +198,7 @@ export default function SettingsPage() {
 
         {/* Save */}
         {error && (
-          <div className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
+          <div role="alert" className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
@@ -217,21 +223,23 @@ export default function SettingsPage() {
 
 // ── Small field wrapper ────────────────────────────────────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ id, label, children }: { id?: string; label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-delta-300 mb-1.5">{label}</label>
+      <label htmlFor={id} className="block text-sm font-medium text-delta-300 mb-1.5">{label}</label>
       {children}
     </div>
   )
 }
 
 function Select({
+  id,
   value,
   onChange,
   options,
   placeholder,
 }: {
+  id?: string
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
@@ -239,6 +247,7 @@ function Select({
 }) {
   return (
     <select
+      id={id}
       value={value}
       onChange={e => onChange(e.target.value)}
       className={`${inputClass} cursor-pointer`}

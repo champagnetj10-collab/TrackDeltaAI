@@ -58,7 +58,7 @@ export default function SessionsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 mb-6">
+        <div role="alert" className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 mb-6">
           <p className="text-red-400 text-sm">{error}</p>
         </div>
       )}

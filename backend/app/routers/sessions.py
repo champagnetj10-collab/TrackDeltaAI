@@ -165,6 +165,9 @@ def get_session(session_id: uuid.UUID, current_user: CurrentUser, db: DB):
 def get_debrief(session_id: uuid.UUID, current_user: CurrentUser, db: DB):
     session = _get_session_or_404(session_id, current_user.id, db)
     if not session.debrief_id:
+        if session.processing_status == "failed":
+            detail = session.processing_error or "This session failed to process and has no debrief."
+            raise HTTPException(status_code=422, detail=detail)
         raise HTTPException(status_code=404, detail="Debrief not ready yet.")
     debrief = db.query(Debrief).filter(Debrief.id == session.debrief_id).first()
     if not debrief:

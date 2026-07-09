@@ -80,10 +80,11 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label htmlFor="displayName" className="block text-sm font-medium text-slate-300 mb-1.5">
               Display name
             </label>
             <input
+              id="displayName"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
@@ -94,10 +95,11 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
               Email
             </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -108,10 +110,11 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
               Password
             </label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -123,7 +126,7 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-950 border border-red-800 rounded-lg px-4 py-2">
+            <p role="alert" className="text-sm text-red-400 bg-red-950 border border-red-800 rounded-lg px-4 py-2">
               {error}
             </p>
           )}

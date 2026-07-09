@@ -90,7 +90,9 @@ def create_checkout_session(
             customer = stripe.Customer.create(email=current_user.email)
         except stripe.StripeError as exc:
             logger.exception("Stripe customer creation failed")
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=502, detail="Billing is temporarily unavailable. Please try again shortly."
+            ) from exc
         current_user.stripe_customer_id = customer.id
         db.commit()
 
@@ -104,7 +106,9 @@ def create_checkout_session(
         )
     except stripe.StripeError as exc:
         logger.exception("Stripe checkout session creation failed")
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=502, detail="Billing is temporarily unavailable. Please try again shortly."
+        ) from exc
 
     return CheckoutResponse(url=checkout_session.url)
 
@@ -123,7 +127,9 @@ def create_portal_session(current_user: CurrentUser) -> PortalResponse:
         )
     except stripe.StripeError as exc:
         logger.exception("Stripe portal session creation failed")
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=502, detail="Billing is temporarily unavailable. Please try again shortly."
+        ) from exc
 
     return PortalResponse(url=portal_session.url)
 
