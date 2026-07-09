@@ -45,6 +45,15 @@ def request_upload_url(
     db: DB,
 ):
     """Step 1: Request a presigned S3 URL for direct upload."""
+    if not body.filename.lower().endswith(".ibt"):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "This doesn't look like an iRacing telemetry file. "
+                "Look for a .ibt file in Documents → iRacing → telemetry."
+            ),
+        )
+
     # Enforce free tier limits
     if current_user.subscription_tier == "free":
         if current_user.monthly_uploads_used >= settings.free_tier_monthly_uploads:
@@ -84,6 +93,28 @@ def upload_complete(
 ):
     """Step 2: Notify that S3 upload is done; enqueue processing."""
     session = _get_session_or_404(session_id, current_user.id, db)
+
+    storage = StorageService()
+    file_size = storage.get_object_size(settings.s3_bucket_telemetry, session.raw_file_s3_key)
+    if file_size is None:
+        raise HTTPException(
+            status_code=400,
+            detail="We couldn't find your uploaded file. Please try uploading again.",
+        )
+    if file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded file is empty. Please try uploading again.",
+        )
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
+    if file_size > max_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"This file is larger than {settings.max_upload_size_mb} MB. Large sessions "
+                "can sometimes be split by iRacing — try uploading the most recent portion."
+            ),
+        )
 
     session.driver_note = body.driver_note
     session.processing_status = "parsing"

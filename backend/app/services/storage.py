@@ -64,3 +64,16 @@ class StorageService:
             return True
         except ClientError:
             return False
+
+    def get_object_size(self, bucket: str, key: str) -> int | None:
+        """Return the size in bytes of an S3 object, or None if it doesn't exist.
+
+        Used to validate an upload actually landed (and is within size
+        limits) before enqueueing processing — the presigned PUT URL itself
+        can't enforce a max size, so this is the server-side check.
+        """
+        try:
+            response = self.client.head_object(Bucket=bucket, Key=key)
+        except ClientError:
+            return None
+        return response["ContentLength"]
