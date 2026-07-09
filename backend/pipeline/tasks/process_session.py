@@ -219,7 +219,17 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
                 db.commit()
         except Exception:
             pass
-        # Celery retry with back-off
+
+        # Permanent failures (corrupt/invalid .ibt file) will never succeed on
+        # retry - see Architecture doc §5.3. Also skip retry entirely in eager
+        # mode (CELERY_TASK_ALWAYS_EAGER, used for local dev without a broker):
+        # self.retry() there just re-raises immediately rather than actually
+        # retrying asynchronously, which would otherwise surface as a 500 to
+        # whichever HTTP request enqueued this task.
+        is_permanent_failure = isinstance(exc, ValueError)
+        if is_permanent_failure or self.request.is_eager:
+            return {"status": "failed", "error": str(exc)}
+
         raise self.retry(exc=exc)
     finally:
         db.close()

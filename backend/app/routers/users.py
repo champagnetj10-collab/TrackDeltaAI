@@ -1,4 +1,5 @@
 """Users router — profile management."""
+import uuid
 from datetime import datetime
 from typing import Annotated
 from fastapi import APIRouter, Depends
@@ -16,7 +17,7 @@ DB = Annotated[Session, Depends(get_db)]
 
 
 class UserResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     email: str
     display_name: str | None
     iracing_member_id: str | None
