@@ -47,7 +47,6 @@ Nothing below is marked done unless it has been verified, not just built.
 - Track reference data — `tracks` / `track_corners` tables have **0 rows**; every session currently produces session-level features only, no corner-level detail
 - Error monitoring / alerting (Sentry or equivalent) — not configured anywhere
 - Legal pages (Terms of Service, Privacy Policy), support channel, refund policy
-- Pricing decision — PRD still lists this as open ($15/$20/$25/$19 per month under consideration)
 - Beta user recruitment
 
 **The three unvalidated risks that gate this roadmap:** real iRacing telemetry (M1), a real Anthropic response (M1), and a real credit card (M4). Nothing downstream of those should be treated as proven until each is retired.
@@ -169,8 +168,7 @@ Clear every billing, legal, and operational-safety requirement for charging a st
 ### Deliverables — grouped by risk category
 
 **Billing & business**
-- [ ] Pro tier pricing finalized (PRD flags $15/$20/$25/$19 per month as still open — beta feedback and willingness-to-pay signals should inform this)
-- [ ] Free tier session limit finalized (PRD/MVP spec currently disagree — 2/month vs. 3/month — resolve before launch)
+- [x] Pricing decided: **Free — 3 reports/month. Pro — $29/month, unlimited reports.** Still needed before launch: create the live Stripe product/price for $29/mo and wire the real price ID into `STRIPE_PRICE_ID_PRO_MONTHLY`; update `free_tier_monthly_uploads` in `backend/app/config.py` if it doesn't already read 3; reconcile the PRD/MVP spec docs, which currently state 2/month, to match
 - [ ] Stripe integration tested against a **real Stripe account** in live mode with a real card (currently only code-complete, never exercised — `subscriptions.py` explicitly documents this gap)
 - [ ] Failed-payment → grace period → downgrade path tested with an actual failed charge, not just webhook simulation
 - [ ] Refund/cancellation policy written and reachable from the billing page
