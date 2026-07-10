@@ -1,6 +1,6 @@
 """Standalone validation tool for testing the pipeline against a REAL .ibt file.
 
-This is NOT part of the application — it's a manual diagnostic script for the
+This is NOT part of the application - it's a manual diagnostic script for the
 one validation step every implemented pipeline stage is still waiting on:
 confirming IbtParser's binary layout assumptions against an actual iRacing
 telemetry file (see module docstring in pipeline/parser/ibt_parser.py).
@@ -9,21 +9,35 @@ Usage
 -----
     cd backend
     .venv/Scripts/python scripts/validate_ibt.py path/to/session.ibt
-    .venv/Scripts/python scripts/validate_ibt.py path/to/session.ibt --full
+    .venv/Scripts/python scripts/validate_ibt.py path/to/session.ibt --parse-only
     .venv/Scripts/python scripts/validate_ibt.py path/to/session.ibt --raw-header-only
 
 Modes
 -----
-Default:            Parse the file with IbtParser and print metadata/lap diagnostics.
---full:             Also run FeatureExtractor -> DnaEngine -> CoachingEngine
-                     (no database, no S3, no LLM calls — track_corners=[] so
-                     corner-level features will be empty; that's expected
-                     until Sprint 1.2 track data is seeded).
+Default:            Raw header dump + IbtParser.parse() + FeatureExtractor ->
+                     DnaEngine -> CoachingEngine (no database, no S3, no LLM
+                     calls - track_corners=[] so corner-level features will
+                     be empty; that's expected until track reference data
+                     is seeded) + physical-plausibility sanity checks.
+--parse-only:        Stop after IbtParser.parse() - skip extractor/DNA/coaching.
 --raw-header-only:  Just dump the raw header struct fields, skip parsing.
-                     Useful if a full parse throws — shows exactly what the
+                     Useful if a full parse throws - shows exactly what the
                      header bytes actually contain so offsets can be fixed.
 
+IMPORTANT - what this tool can and cannot tell you
+---------------------------------------------------
+"Parsed without raising an exception" is NOT the same as "the byte layout is
+correct." A wrong struct offset can easily decode a channel into a
+different, still-numeric field and produce a result that runs to completion
+but is quietly wrong. The sanity-check section exists specifically to catch
+that failure mode by checking decoded values against known physical ranges
+(a Speed channel reading 4.2e18 m/s means an offset is wrong even though
+nothing raised). A clean sanity-check pass is reassuring, not a certificate
+of correctness - only manual review of the printed values against what you
+remember from the actual session (lap times, track, car) can confirm that.
+
 Exit code is 0 only if every requested stage completes without raising.
+A clean exit code does NOT mean the parser is production-ready.
 """
 from __future__ import annotations
 
@@ -41,6 +55,24 @@ from pipeline.parser.ibt_parser import (  # noqa: E402
     IbtParser,
     ParseResult,
 )
+
+# Physical-plausibility bounds for sanity-checking decoded channel values.
+# These are deliberately generous (real cars/tracks won't get close to the
+# edges) - the goal is catching garbage from a wrong byte offset, not
+# nitpicking realistic telemetry.
+_CHANNEL_BOUNDS: dict[str, tuple[float, float]] = {
+    "Speed": (-1.0, 130.0),              # m/s; ~468 km/h upper bound
+    "Throttle": (-0.05, 1.05),
+    "Brake": (-0.05, 1.05),
+    "RPM": (-100.0, 25000.0),
+    "Gear": (-2, 10),
+    "LapDistPct": (-0.01, 1.01),
+    "FuelLevel": (-1.0, 200.0),
+    "SteeringWheelAngle": (-100.0, 100.0),  # radians; catches garbage, not tight
+    "VelocityX": (-130.0, 130.0),
+    "VelocityY": (-130.0, 130.0),
+    "YawRate": (-50.0, 50.0),
+}
 
 
 def dump_raw_header(raw: bytes) -> None:
@@ -88,9 +120,52 @@ def run_parse(raw: bytes) -> ParseResult:
         print(f"\nSample: lap {first_lap_num}, {len(df)} rows, columns: {list(df.columns)}")
         print(df.head(3).to_string())
     else:
-        print("\n** No laps were extracted at all — lap-splitting found nothing.")
+        print("\n** No laps were extracted at all - lap-splitting found nothing.")
 
     return result
+
+
+def run_sanity_checks(result: ParseResult) -> list[str]:
+    """Scan decoded lap data for values outside physically plausible ranges.
+
+    This is the check that can catch a wrong byte offset even when parsing
+    completes without raising - a misaligned offset often decodes a channel
+    into unrelated bytes and produces a number, just not a plausible one.
+    Returns a list of human-readable warning strings (empty = nothing flagged).
+    """
+    warnings: list[str] = []
+    if not result.laps:
+        warnings.append("No laps decoded at all - cannot run sanity checks on channel values.")
+        return warnings
+
+    import numpy as np
+
+    for channel, (lo, hi) in _CHANNEL_BOUNDS.items():
+        all_values = []
+        for df in result.laps.values():
+            if channel in df.columns:
+                all_values.append(df[channel].to_numpy())
+        if not all_values:
+            continue
+        values = np.concatenate(all_values)
+
+        nan_or_inf = ~np.isfinite(values)
+        if nan_or_inf.any():
+            warnings.append(
+                f"{channel}: {int(nan_or_inf.sum())}/{len(values)} samples are NaN/Inf "
+                f"- almost certainly a wrong byte offset or dtype for this channel."
+            )
+            continue  # out-of-range check on a NaN-laced array isn't meaningful
+
+        out_of_range = (values < lo) | (values > hi)
+        if out_of_range.any():
+            warnings.append(
+                f"{channel}: {int(out_of_range.sum())}/{len(values)} samples outside "
+                f"expected range [{lo}, {hi}] (actual min={values.min():.3f}, "
+                f"max={values.max():.3f}) - possible byte-layout mismatch."
+            )
+
+    return warnings
 
 
 def run_full_pipeline(result: ParseResult) -> None:
@@ -130,18 +205,52 @@ def run_full_pipeline(result: ParseResult) -> None:
     print(f"Strengths:       {len(coaching.strengths)}")
     for strength in coaching.strengths:
         print(f"  - [{strength.category}] {strength.title}")
+    print(
+        "\n(Delta voice / LLM narrative stage was NOT run - this tool validates "
+        "parsing, feature extraction, DNA, and coaching only.)"
+    )
+
+
+def print_verdict(warnings: list[str]) -> None:
+    print("\n" + "=" * 78)
+    if warnings:
+        print("VERDICT: LIKELY BYTE-LAYOUT MISMATCH - DO NOT TRUST THIS OUTPUT")
+        print("=" * 78)
+        for w in warnings:
+            print(f"  ! {w}")
+        print(
+            "\nOne or more decoded channels contain garbage or out-of-range values.\n"
+            "Fix the offending struct offset(s)/format(s) in pipeline/parser/ibt_parser.py\n"
+            "(cross-reference the raw header dump above and the iRacing SDK headers),\n"
+            "then re-run this script against the same file."
+        )
+    else:
+        print("VERDICT: NO GARBAGE VALUES DETECTED - output is physically plausible")
+        print("=" * 78)
+        print(
+            "This means every decoded channel fell within a sane physical range.\n"
+            "It does NOT mean the parser is production-ready or that the byte layout\n"
+            "is confirmed correct - a subtly wrong offset can still land inside a\n"
+            "plausible range by coincidence. Before trusting this in production:\n"
+            "  1. Compare the printed track/car/lap-count/lap-time values above\n"
+            "     against what you actually remember from driving this session.\n"
+            "  2. Spot-check a few raw telemetry values (e.g. top speed on a known\n"
+            "     straight) against what you saw on your in-car dash/overlay.\n"
+            "  3. Only after that manual cross-check should this parser be treated\n"
+            "     as validated against real iRacing data."
+        )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the pipeline against a real .ibt file.")
     parser.add_argument("ibt_path", type=Path)
     parser.add_argument(
-        "--full", action="store_true",
-        help="Also run FeatureExtractor -> DnaEngine -> CoachingEngine (no DB/S3/LLM calls).",
+        "--parse-only", action="store_true",
+        help="Stop after IbtParser.parse(); skip FeatureExtractor/DnaEngine/CoachingEngine.",
     )
     parser.add_argument(
         "--raw-header-only", action="store_true",
-        help="Only dump the raw header struct fields; skip parsing.",
+        help="Only dump the raw header struct fields; skip parsing entirely.",
     )
     args = parser.parse_args()
 
@@ -162,7 +271,9 @@ def main() -> int:
         traceback.print_exc()
         return 1
 
-    if args.full:
+    warnings = run_sanity_checks(result)
+
+    if not args.parse_only:
         try:
             run_full_pipeline(result)
         except Exception:
@@ -170,7 +281,7 @@ def main() -> int:
             traceback.print_exc()
             return 1
 
-    print("\nOK - validation completed without errors.")
+    print_verdict(warnings)
     return 0
 
 
