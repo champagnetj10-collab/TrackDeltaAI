@@ -1,6 +1,8 @@
 """
 TrackDelta AI — FastAPI Application Entry Point
 """
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,17 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.routers import sessions, users, dna, subscriptions
+
+# Every module below calls logging.getLogger(__name__) and logs at INFO
+# (pipeline processing steps, DNA updates, etc.). Without this, Python's
+# root logger defaults to WARNING and those INFO logs are silently dropped —
+# on Railway (and any platform that just captures stdout/stderr) that means
+# no visibility into what the pipeline is actually doing. This only adds
+# visibility; it doesn't change any decision logic.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 app = FastAPI(
     title="TrackDelta AI API",

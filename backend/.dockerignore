@@ -1,0 +1,25 @@
+# Never bake secrets or local env files into the image
+.env
+.env.*
+!.env.example
+
+# Local virtualenv / caches — not needed in the image, only bloat the build context
+.venv
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Version control / editor / OS cruft
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Test artifacts — not needed at runtime
+tests/
+htmlcov/
+.coverage
