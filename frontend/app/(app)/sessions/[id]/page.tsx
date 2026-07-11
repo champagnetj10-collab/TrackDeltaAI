@@ -3,18 +3,19 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Clock, TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Clock, TrendingUp, AlertCircle } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 import { getSession, getDebrief } from '@/lib/api'
 import { Session, Debrief } from '@/types'
 import { formatLapTime, CONFIDENCE_LABELS, CONFIDENCE_PIPS } from '@/lib/utils'
+import { PageSkeleton } from '@/components/ui/Skeleton'
 
 const CATEGORY_COLORS: Record<string, string> = {
   braking: '#f59e0b',
   throttle: '#10b981',
-  steering: '#6366f1',
+  steering: '#0D6EFD',
   consistency: '#06b6d4',
   risk: '#ef4444',
 }
@@ -41,25 +42,12 @@ export default function SessionDebriefPage() {
     return () => { cancelled = true }
   }, [id])
 
-  if (loading) {
-    return (
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
-        <div className="h-6 bg-delta-800 rounded w-32 animate-pulse" />
-        <div className="h-24 bg-delta-900 rounded-xl animate-pulse" />
-        <div className="h-48 bg-delta-900 rounded-xl animate-pulse" />
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-28 bg-delta-900 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton cards={4} />
 
   if (error || !session || !debrief) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-10">
-        <div role="alert" className="bg-red-950 border border-red-800 rounded-xl px-6 py-5 flex items-start gap-3">
+        <div role="alert" className="bg-red-500/10 border border-red-500/30 rounded-xl px-6 py-5 flex items-start gap-3">
           <AlertCircle size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-red-300 font-medium">Unable to load debrief</p>
@@ -79,7 +67,7 @@ export default function SessionDebriefPage() {
   const chartData = lapChart.map(([lap, ms]) => ({ lap, time: ms / 1000 }))
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-3xl mx-auto px-6 py-10 space-y-8 animate-fade-in">
 
       {/* Back link */}
       <Link
@@ -91,8 +79,8 @@ export default function SessionDebriefPage() {
       </Link>
 
       {/* Session header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
+      <div className="animate-slide-up">
+        <h1 className="text-2xl font-bold text-white tracking-tight">
           {session.iracing_track_name ?? 'Session Debrief'}
           {session.track_config && (
             <span className="text-delta-400 font-normal"> — {session.track_config}</span>
@@ -112,8 +100,9 @@ export default function SessionDebriefPage() {
 
       {/* Headline */}
       {content?.headline && (
-        <div className="bg-delta-900 border border-delta-700 rounded-xl px-6 py-5">
-          <p className="text-delta-300 text-xs font-semibold uppercase tracking-widest mb-2">
+        <div className="relative overflow-hidden bg-delta-900 border border-delta-700 rounded-2xl px-6 py-5 animate-slide-up">
+          <div className="absolute top-0 left-0 w-1 h-full bg-telemetry-gradient" aria-hidden="true" />
+          <p className="text-delta-400 text-xs font-semibold uppercase tracking-widest mb-2">
             Delta's take
           </p>
           <p className="text-white text-lg font-medium leading-snug">{content.headline}</p>
@@ -122,21 +111,21 @@ export default function SessionDebriefPage() {
 
       {/* Lap time chart */}
       {chartData.length > 1 && (
-        <div className="bg-delta-900 border border-delta-800 rounded-xl p-6">
+        <div className="bg-delta-900 border border-delta-800 rounded-2xl p-6 animate-slide-up">
           <h2 className="text-white font-semibold mb-4">Lap progression</h2>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={chartData} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis dataKey="lap" tick={{ fill: '#6b7280', fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#14213a" />
+              <XAxis dataKey="lap" tick={{ fill: '#5b96fa', fontSize: 11 }} />
               <YAxis
                 domain={['auto', 'auto']}
-                tick={{ fill: '#6b7280', fontSize: 11 }}
+                tick={{ fill: '#5b96fa', fontSize: 11 }}
                 tickFormatter={v => v.toFixed(1)}
               />
               <Tooltip
                 contentStyle={{
-                  background: '#0f0f1a',
-                  border: '1px solid #2d2d4e',
+                  background: '#0B0D10',
+                  border: '1px solid #14213a',
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -146,10 +135,12 @@ export default function SessionDebriefPage() {
               <Line
                 type="monotone"
                 dataKey="time"
-                stroke="#6366f1"
+                stroke="#0D6EFD"
                 strokeWidth={2}
-                dot={{ fill: '#6366f1', r: 3 }}
+                dot={{ fill: '#0D6EFD', r: 3 }}
                 activeDot={{ r: 5 }}
+                isAnimationActive
+                animationDuration={1000}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -158,7 +149,7 @@ export default function SessionDebriefPage() {
 
       {/* Overview */}
       {content?.session_overview && (
-        <div>
+        <div className="animate-slide-up">
           <h2 className="text-white font-semibold mb-3">Session overview</h2>
           <div className="text-delta-300 text-sm leading-relaxed whitespace-pre-wrap">
             {content.session_overview}
@@ -168,14 +159,14 @@ export default function SessionDebriefPage() {
 
       {/* Strengths */}
       {content?.strengths?.length > 0 && (
-        <div>
+        <div className="animate-slide-up">
           <h2 className="text-white font-semibold mb-3">What's working</h2>
           <div className="space-y-3">
             {content.strengths.map((s: any, i: number) => (
-              <div key={i} className="bg-delta-900 border border-emerald-900 rounded-xl px-5 py-4">
+              <div key={i} className="bg-delta-900 border border-emerald-500/20 rounded-xl px-5 py-4">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp size={14} className="text-emerald-400 flex-shrink-0" />
-                  <span className="text-emerald-300 font-medium text-sm">{s.title}</span>
+                  <span className="text-emerald-400 font-medium text-sm">{s.title}</span>
                 </div>
                 <p className="text-delta-400 text-sm leading-relaxed">{s.delta_commentary}</p>
               </div>
@@ -186,7 +177,7 @@ export default function SessionDebriefPage() {
 
       {/* Opportunities */}
       {content?.opportunities?.length > 0 && (
-        <div>
+        <div className="animate-slide-up">
           <h2 className="text-white font-semibold mb-3">Development areas</h2>
           <div className="space-y-4">
             {content.opportunities.map((opp: any, i: number) => (
@@ -198,7 +189,7 @@ export default function SessionDebriefPage() {
 
       {/* Practice plan */}
       {content?.practice_plan?.length > 0 && (
-        <div>
+        <div className="animate-slide-up">
           <h2 className="text-white font-semibold mb-3">Practice plan</h2>
           <div className="space-y-3">
             {content.practice_plan.map((item: any) => (
@@ -206,7 +197,7 @@ export default function SessionDebriefPage() {
                 key={item.order}
                 className="flex gap-4 bg-delta-900 border border-delta-800 rounded-xl px-5 py-4"
               >
-                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-delta-800 flex items-center justify-center text-delta-300 text-xs font-bold">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-delta-950 border border-delta-700 flex items-center justify-center text-delta-300 text-xs font-bold">
                   {item.order}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -234,7 +225,7 @@ export default function SessionDebriefPage() {
 
       {/* DNA update note */}
       {content?.dna_update?.delta_message && (
-        <div className="bg-delta-900 border border-delta-700 rounded-xl px-6 py-5">
+        <div className="bg-delta-900 border border-delta-700 rounded-2xl px-6 py-5 animate-slide-up">
           <p className="text-delta-500 text-xs font-semibold uppercase tracking-widest mb-2">
             Driver DNA update
           </p>
@@ -249,16 +240,16 @@ export default function SessionDebriefPage() {
 }
 
 function OpportunityCard({ opportunity: opp, rank }: { opportunity: any; rank: number }) {
-  const color = CATEGORY_COLORS[opp.category] ?? '#6366f1'
+  const color = CATEGORY_COLORS[opp.category] ?? '#0D6EFD'
   const pips = CONFIDENCE_PIPS(opp.confidence ?? 0)
   const label = CONFIDENCE_LABELS[Math.floor((opp.confidence ?? 0) * 4)] ?? 'Very Low'
 
   return (
-    <div className="bg-delta-900 border border-delta-800 rounded-xl overflow-hidden">
+    <div className="bg-delta-900 border border-delta-800 rounded-xl overflow-hidden hover:border-delta-700 transition-colors">
       {/* Category stripe */}
       <div
         className="h-1 w-full"
-        style={{ background: `linear-gradient(to right, ${color}40, ${color}20)` }}
+        style={{ background: `linear-gradient(to right, ${color}80, ${color}20)` }}
       />
       <div className="px-5 py-4">
         <div className="flex items-start gap-3">
@@ -267,7 +258,7 @@ function OpportunityCard({ opportunity: opp, rank }: { opportunity: any; rank: n
             <div className="flex items-center justify-between gap-3 mb-2">
               <span className="text-white font-medium text-sm">{opp.title}</span>
               {opp.estimated_gain_ms > 0 && (
-                <span className="flex-shrink-0 text-xs text-emerald-400 bg-emerald-950 border border-emerald-900 rounded-full px-2 py-0.5">
+                <span className="flex-shrink-0 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5 font-mono">
                   ~{(opp.estimated_gain_ms / 1000).toFixed(1)}s
                 </span>
               )}
@@ -285,7 +276,7 @@ function OpportunityCard({ opportunity: opp, rank }: { opportunity: any; rank: n
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className={`w-1.5 h-1.5 rounded-full ${i < pips ? 'bg-delta-400' : 'bg-delta-800'}`}
+                      className={`w-1.5 h-1.5 rounded-full transition-colors ${i < pips ? 'bg-delta-400' : 'bg-delta-800'}`}
                     />
                   ))}
                 </div>
