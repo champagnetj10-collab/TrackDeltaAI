@@ -3,9 +3,12 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useRouter } from 'next/navigation'
+import { UploadCloud, FileCheck2, CheckCircle2 } from 'lucide-react'
 import { requestUploadUrl, uploadFileToS3, notifyUploadComplete, getSessionStatus } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { SessionStatus } from '@/types'
+import { Button } from '@/components/ui/Button'
+import { FormError } from '@/components/ui/Input'
 
 type UploadStep = 'idle' | 'uploading' | 'parsing' | 'extracting' | 'coaching' | 'complete' | 'error'
 
@@ -18,6 +21,13 @@ const STEP_MESSAGES: Record<UploadStep, string> = {
   complete:   'Your coaching debrief is ready.',
   error:      '',
 }
+
+const PIPELINE_STEPS: { key: UploadStep; label: string }[] = [
+  { key: 'uploading', label: 'Upload' },
+  { key: 'parsing', label: 'Parse' },
+  { key: 'extracting', label: 'Analyze' },
+  { key: 'coaching', label: 'Coach' },
+]
 
 const PIPELINE_HINTS = [
   'Delta is looking at your braking zones, throttle application, and corner exits.',
@@ -33,7 +43,6 @@ export default function UploadPage() {
   const [driverNote, setDriverNote] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [hintIndex, setHintIndex] = useState(0)
-  const [sessionId, setSessionId] = useState<string | null>(null)
 
   const onDrop = useCallback((accepted: File[]) => {
     if (accepted[0]) setFile(accepted[0])
@@ -62,7 +71,6 @@ export default function UploadPage() {
       // 1. Request presigned URL
       setStep('uploading')
       const { session_id, presigned_url } = await requestUploadUrl(file.name)
-      setSessionId(session_id)
 
       // 2. Upload file directly to S3
       await uploadFileToS3(presigned_url, file)
@@ -72,17 +80,14 @@ export default function UploadPage() {
 
       // 4. Poll for status
       setStep('parsing')
-      let hint = 0
-      const interval = setInterval(() => {
+      const hintInterval = setInterval(() => {
         setHintIndex((h) => (h + 1) % PIPELINE_HINTS.length)
-        hint++
       }, 4000)
 
       const poll = setInterval(async () => {
         try {
           const { status, processing_error } = await getSessionStatus(session_id)
 
-          // Map API status to UI step
           const statusMap: Record<SessionStatus, UploadStep> = {
             pending:    'uploading',
             parsing:    'parsing',
@@ -95,13 +100,13 @@ export default function UploadPage() {
 
           if (status === 'completed') {
             clearInterval(poll)
-            clearInterval(interval)
+            clearInterval(hintInterval)
             setTimeout(() => router.push(`/sessions/${session_id}`), 800)
           }
 
           if (status === 'failed') {
             clearInterval(poll)
-            clearInterval(interval)
+            clearInterval(hintInterval)
             setError(processing_error ?? 'Something went wrong during analysis. Please try again.')
           }
         } catch {
@@ -117,40 +122,43 @@ export default function UploadPage() {
   }
 
   const isProcessing = !['idle', 'error'].includes(step)
+  const activeStepIndex = PIPELINE_STEPS.findIndex((s) => s.key === step)
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-xl mx-auto px-6 py-10 space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-white">New Session</h1>
-        <p className="text-slate-400 mt-1">Upload your iRacing .ibt telemetry file.</p>
+        <h1 className="text-2xl font-bold text-white tracking-tight">New session</h1>
+        <p className="text-delta-400 mt-1 text-sm">Upload your iRacing .ibt telemetry file.</p>
       </div>
 
       {/* Drop zone */}
       <div
         {...getRootProps()}
         className={cn(
-          'border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors',
+          'border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-200',
           isDragActive
-            ? 'border-delta-500 bg-delta-950'
+            ? 'border-delta-500 bg-delta-900 scale-[1.01]'
             : file
-            ? 'border-green-700 bg-green-950'
-            : 'border-slate-700 hover:border-slate-500 bg-slate-900',
+            ? 'border-emerald-600/60 bg-emerald-500/5'
+            : 'border-delta-800 hover:border-delta-600/60 bg-delta-900/50',
           isProcessing && 'pointer-events-none opacity-60'
         )}
       >
         <input {...getInputProps()} />
         {file ? (
-          <div>
-            <p className="text-green-400 font-medium">{file.name}</p>
-            <p className="text-slate-500 text-sm mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+          <div className="animate-scale-in">
+            <FileCheck2 size={28} className="mx-auto mb-3 text-emerald-400" />
+            <p className="text-emerald-400 font-medium">{file.name}</p>
+            <p className="text-delta-500 text-sm mt-1">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
           </div>
         ) : (
           <div>
-            <p className="text-slate-300 font-medium">
+            <UploadCloud size={28} className="mx-auto mb-3 text-delta-500" />
+            <p className="text-steel font-medium text-sm">
               {isDragActive ? 'Drop it here' : 'Drag your .ibt file here, or click to browse'}
             </p>
-            <p className="text-slate-500 text-sm mt-2">
-              Find it at: <code className="bg-slate-800 px-1.5 py-0.5 rounded">Documents → iRacing → telemetry</code>
+            <p className="text-delta-500 text-sm mt-2">
+              Find it at: <code className="bg-delta-950 border border-delta-800 px-1.5 py-0.5 rounded text-delta-400">Documents → iRacing → telemetry</code>
             </p>
           </div>
         )}
@@ -159,28 +167,29 @@ export default function UploadPage() {
       {/* Session note */}
       {!isProcessing && (
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">
-            Session note <span className="text-slate-500 font-normal">(optional)</span>
+          <label htmlFor="driverNote" className="block text-sm font-medium text-delta-300 mb-1.5">
+            Session note <span className="text-delta-600 font-normal">(optional)</span>
           </label>
           <textarea
+            id="driverNote"
             value={driverNote}
             onChange={(e) => setDriverNote(e.target.value)}
             maxLength={280}
             rows={2}
             placeholder="What were you working on? How did it feel?"
-            className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-delta-500 resize-none text-sm"
+            className="w-full px-4 py-2.5 bg-delta-950 border border-delta-700 rounded-lg text-white placeholder-delta-600 focus:outline-none focus:ring-2 focus:ring-delta-500 resize-none text-sm transition-colors"
           />
-          <p className="text-xs text-slate-600 mt-1">{driverNote.length}/280</p>
+          <p className="text-xs text-delta-600 mt-1">{driverNote.length}/280</p>
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div role="alert" className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
-          <p className="text-red-400 text-sm">{error}</p>
+        <div>
+          <FormError message={error} />
           <button
             onClick={() => { setError(null); setStep('idle') }}
-            className="text-red-300 text-xs mt-1 hover:text-red-200"
+            className="text-delta-400 text-xs mt-2 hover:text-white transition-colors"
           >
             Try again
           </button>
@@ -189,30 +198,52 @@ export default function UploadPage() {
 
       {/* Processing state */}
       {isProcessing && step !== 'complete' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center space-y-3">
-          <div className="flex justify-center gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-2 h-2 rounded-full bg-delta-500 animate-bounce"
-                style={{ animationDelay: `${i * 150}ms` }}
-              />
+        <div className="bg-delta-900 border border-delta-800 rounded-2xl p-6 space-y-6 animate-fade-in">
+          {/* Stepper */}
+          <div className="flex items-center">
+            {PIPELINE_STEPS.map((s, i) => (
+              <div key={s.key} className="flex items-center flex-1 last:flex-none">
+                <div className="flex flex-col items-center gap-2">
+                  <div
+                    className={cn(
+                      'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors duration-300',
+                      i < activeStepIndex
+                        ? 'bg-delta-600 border-delta-600 text-white'
+                        : i === activeStepIndex
+                        ? 'border-delta-500 text-delta-400 animate-pulse-slow'
+                        : 'border-delta-800 text-delta-700'
+                    )}
+                  >
+                    {i < activeStepIndex ? <CheckCircle2 size={14} /> : i + 1}
+                  </div>
+                  <span className={cn('text-[11px] font-medium', i <= activeStepIndex ? 'text-delta-300' : 'text-delta-700')}>
+                    {s.label}
+                  </span>
+                </div>
+                {i < PIPELINE_STEPS.length - 1 && (
+                  <div className="flex-1 h-0.5 mx-1 -mt-5 bg-delta-800 overflow-hidden rounded-full">
+                    <div
+                      className="h-full bg-delta-600 transition-all duration-500"
+                      style={{ width: i < activeStepIndex ? '100%' : '0%' }}
+                    />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
-          <p className="text-white font-medium">{STEP_MESSAGES[step]}</p>
-          <p className="text-slate-500 text-sm">{PIPELINE_HINTS[hintIndex]}</p>
+
+          <div className="text-center space-y-2">
+            <p className="text-white font-medium text-sm">{STEP_MESSAGES[step]}</p>
+            <p className="text-delta-500 text-sm">{PIPELINE_HINTS[hintIndex]}</p>
+          </div>
         </div>
       )}
 
       {/* Upload button */}
       {!isProcessing && (
-        <button
-          onClick={handleUpload}
-          disabled={!file}
-          className="w-full py-3 bg-delta-600 hover:bg-delta-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
-        >
+        <Button onClick={handleUpload} disabled={!file} fullWidth size="lg">
           Analyze with Delta
-        </button>
+        </Button>
       )}
     </div>
   )
