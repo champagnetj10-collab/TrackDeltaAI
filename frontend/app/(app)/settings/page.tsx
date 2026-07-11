@@ -1,8 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CheckCircle2 } from 'lucide-react'
 import { User } from '@/types'
 import { apiFetch } from '@/lib/api'
+import { Input, FormError } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { PageSkeleton } from '@/components/ui/Skeleton'
 
 const EXPERIENCE_OPTIONS = [
   { value: 'beginner', label: 'Beginner — still learning the basics' },
@@ -92,22 +96,14 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
-        <div className="h-8 bg-delta-800 rounded w-32 animate-pulse" />
-        <div className="h-64 bg-delta-900 rounded-xl animate-pulse" />
-        <div className="h-64 bg-delta-900 rounded-xl animate-pulse" />
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton cards={2} />
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
-      <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
+    <div className="max-w-2xl mx-auto px-6 py-10 animate-fade-in">
+      <h1 className="text-2xl font-bold text-white mb-8 tracking-tight">Settings</h1>
 
       {loadError && (
-        <div role="alert" className="bg-red-950 border border-red-800 rounded-xl px-5 py-4 mb-6">
+        <div role="alert" className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 mb-6">
           <p className="text-red-400 text-sm">{loadError}</p>
         </div>
       )}
@@ -115,104 +111,92 @@ export default function SettingsPage() {
       <form onSubmit={handleSave} className="space-y-8">
 
         {/* Profile */}
-        <section>
-          <h2 className="text-white font-semibold mb-4 pb-2 border-b border-delta-800">
+        <section className="bg-delta-900 border border-delta-800 rounded-2xl p-6 animate-slide-up">
+          <h2 className="text-white font-semibold mb-5 pb-3 border-b border-delta-800">
             Profile
           </h2>
           <div className="space-y-4">
-            <Field id="displayName" label="Display name">
-              <input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                className={inputClass}
-                placeholder="Your name"
-              />
-            </Field>
-            <Field id="iracingMemberId" label="iRacing Member ID">
-              <input
-                id="iracingMemberId"
-                type="text"
-                value={iracingMemberId}
-                onChange={e => setIracingMemberId(e.target.value)}
-                className={inputClass}
-                placeholder="e.g. 123456"
-              />
-            </Field>
+            <Input
+              id="displayName"
+              label="Display name"
+              type="text"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder="Your name"
+            />
+            <Input
+              id="iracingMemberId"
+              label="iRacing Member ID"
+              type="text"
+              value={iracingMemberId}
+              onChange={e => setIracingMemberId(e.target.value)}
+              placeholder="e.g. 123456"
+            />
             {user?.email && (
-              <Field label="Email">
+              <div>
+                <p className="block text-sm font-medium text-delta-300 mb-1.5">Email</p>
                 <p className="text-delta-400 text-sm py-2.5">{user.email}</p>
-              </Field>
+              </div>
             )}
           </div>
         </section>
 
         {/* Racing profile */}
-        <section>
-          <h2 className="text-white font-semibold mb-4 pb-2 border-b border-delta-800">
+        <section className="bg-delta-900 border border-delta-800 rounded-2xl p-6 animate-slide-up" style={{ animationDelay: '60ms' }}>
+          <h2 className="text-white font-semibold mb-1 pb-3 border-b border-delta-800">
             Racing profile
           </h2>
-          <p className="text-delta-400 text-sm mb-4">
-            Help Delta understand your background so it can personalise coaching from your first session.
+          <p className="text-delta-400 text-sm my-4">
+            Help Delta understand your background so it can personalize coaching from your first session.
           </p>
           <div className="space-y-4">
-            <Field id="experienceLevel" label="Experience level">
-              <Select
-                id="experienceLevel"
-                value={experienceLevel}
-                onChange={setExperienceLevel}
-                options={EXPERIENCE_OPTIONS}
-                placeholder="Select level"
-              />
-            </Field>
-            <Field id="iratingRange" label="iRating range">
-              <Select
-                id="iratingRange"
-                value={iratingRange}
-                onChange={setIratingRange}
-                options={IRATING_OPTIONS}
-                placeholder="Select range"
-              />
-            </Field>
-            <Field id="primaryGoal" label="Primary goal">
-              <Select
-                id="primaryGoal"
-                value={primaryGoal}
-                onChange={setPrimaryGoal}
-                options={GOAL_OPTIONS}
-                placeholder="Select goal"
-              />
-            </Field>
-            <Field id="mainFrustration" label="Biggest frustration">
-              <Select
-                id="mainFrustration"
-                value={mainFrustration}
-                onChange={setMainFrustration}
-                options={FRUSTRATION_OPTIONS}
-                placeholder="Select frustration"
-              />
-            </Field>
+            <SelectField
+              id="experienceLevel"
+              label="Experience level"
+              value={experienceLevel}
+              onChange={setExperienceLevel}
+              options={EXPERIENCE_OPTIONS}
+              placeholder="Select level"
+            />
+            <SelectField
+              id="iratingRange"
+              label="iRating range"
+              value={iratingRange}
+              onChange={setIratingRange}
+              options={IRATING_OPTIONS}
+              placeholder="Select range"
+            />
+            <SelectField
+              id="primaryGoal"
+              label="Primary goal"
+              value={primaryGoal}
+              onChange={setPrimaryGoal}
+              options={GOAL_OPTIONS}
+              placeholder="Select goal"
+            />
+            <SelectField
+              id="mainFrustration"
+              label="Biggest frustration"
+              value={mainFrustration}
+              onChange={setMainFrustration}
+              options={FRUSTRATION_OPTIONS}
+              placeholder="Select frustration"
+            />
           </div>
         </section>
 
         {/* Save */}
-        {error && (
-          <div role="alert" className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
+        {error && <FormError message={error} />}
 
         <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-delta-500 hover:bg-delta-400 disabled:opacity-60 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
-          >
+          <Button type="submit" loading={saving}>
             {saving ? 'Saving...' : 'Save changes'}
-          </button>
+          </Button>
           {saved && (
-            <span className="text-emerald-400 text-sm">Saved ✓</span>
+            <span className="flex items-center gap-1.5 text-emerald-400 text-sm animate-fade-in">
+              <CheckCircle2 size={15} />
+              Saved
+            </span>
           )}
         </div>
 
@@ -221,46 +205,37 @@ export default function SettingsPage() {
   )
 }
 
-// ── Small field wrapper ────────────────────────────────────────────────────────
-
-function Field({ id, label, children }: { id?: string; label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-delta-300 mb-1.5">{label}</label>
-      {children}
-    </div>
-  )
-}
-
-function Select({
+function SelectField({
   id,
+  label,
   value,
   onChange,
   options,
   placeholder,
 }: {
-  id?: string
+  id: string
+  label: string
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
   placeholder: string
 }) {
   return (
-    <select
-      id={id}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className={`${inputClass} cursor-pointer`}
-    >
-      <option value="">{placeholder}</option>
-      {options.map(o => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-delta-300 mb-1.5">{label}</label>
+      <select
+        id={id}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full bg-delta-950 border border-delta-700 rounded-lg px-3.5 py-2.5 text-white placeholder-delta-600 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent text-sm cursor-pointer transition-colors"
+      >
+        <option value="">{placeholder}</option>
+        {options.map(o => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
-
-const inputClass =
-  'w-full bg-delta-950 border border-delta-700 rounded-lg px-3.5 py-2.5 text-white placeholder-delta-600 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent text-sm'
