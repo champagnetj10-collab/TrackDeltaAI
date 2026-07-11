@@ -49,11 +49,11 @@ export function TelemetryTrace({ className }: { className?: string }) {
 
 function DnaRadarMini() {
   return (
-    <div className="h-32">
+    <div className="h-36">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={DNA_RADAR} outerRadius="75%">
+        <RadarChart data={DNA_RADAR} outerRadius="55%">
           <PolarGrid stroke="#14213a" />
-          <PolarAngleAxis dataKey="attribute" tick={{ fill: '#5b96fa', fontSize: 9 }} />
+          <PolarAngleAxis dataKey="attribute" tick={{ fill: '#5b96fa', fontSize: 8 }} />
           <Radar dataKey="value" stroke="#0D6EFD" fill="#0D6EFD" fillOpacity={0.35} isAnimationActive animationDuration={1200} />
         </RadarChart>
       </ResponsiveContainer>
@@ -65,9 +65,9 @@ function DnaRadarMini() {
 export default function TelemetryShowcase() {
   return (
     <div className="relative w-full max-w-md rounded-2xl border border-delta-800 bg-delta-900/60 backdrop-blur p-4 shadow-2xl shadow-delta-950/60 animate-scale-in">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Telemetry trace */}
-        <div className="col-span-2 bg-delta-950/60 border border-delta-800 rounded-xl p-3">
+        <div className="sm:col-span-2 bg-delta-950/60 border border-delta-800 rounded-xl p-3">
           <p className="text-delta-500 text-[10px] font-semibold uppercase tracking-widest mb-1">Telemetry</p>
           <TelemetryTrace className="h-16" />
         </div>

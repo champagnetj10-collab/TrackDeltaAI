@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
@@ -9,6 +9,14 @@ import { Input, FormError } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthShell title="Welcome back" subtitle="Sign in to your account">{null}</AuthShell>}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
