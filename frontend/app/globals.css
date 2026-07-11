@@ -4,20 +4,32 @@
 
 @layer base {
   :root {
-    --background: 2 6 23;       /* surface-950 */
-    --foreground: 248 250 252;  /* surface-50 */
+    --background: 11 13 16;     /* carbon black */
+    --foreground: 229 231 235;  /* steel */
+  }
+
+  * {
+    @apply border-delta-800;
   }
 
   body {
-    @apply bg-slate-950 text-slate-50 antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-delta-950 text-steel antialiased;
+  }
+
+  ::selection {
+    @apply bg-delta-600/40 text-white;
   }
 
   /* Scrollbar styling */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-slate-900; }
-  ::-webkit-scrollbar-thumb { @apply bg-slate-700 rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-600; }
+  ::-webkit-scrollbar-track { @apply bg-delta-950; }
+  ::-webkit-scrollbar-thumb { @apply bg-delta-800 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-delta-700; }
+
+  /* Consistent, visible focus ring for keyboard nav across the app */
+  :focus-visible {
+    @apply outline-none ring-2 ring-delta-500 ring-offset-2 ring-offset-delta-950 rounded-md;
+  }
 }
 
 @layer components {
@@ -26,7 +38,7 @@
     @apply flex gap-0.5;
   }
   .confidence-pip {
-    @apply w-3 h-1.5 rounded-full bg-slate-700;
+    @apply w-3 h-1.5 rounded-full bg-delta-800;
   }
   .confidence-pip.filled {
     @apply bg-delta-500;
@@ -34,11 +46,25 @@
 
   /* Debrief section card */
   .debrief-card {
-    @apply bg-slate-900 border border-slate-800 rounded-xl p-6;
+    @apply bg-delta-900 border border-delta-800 rounded-xl p-6;
   }
 
   /* One clear objective — prominent display */
   .objective-card {
     @apply bg-delta-950 border border-delta-800 rounded-xl p-6 text-delta-100;
+  }
+
+  /* Skeleton shimmer — used by <Skeleton /> */
+  .skeleton {
+    @apply relative overflow-hidden bg-delta-900;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 bg-shimmer bg-[length:200%_100%] animate-shimmer;
+  }
+
+  /* Reusable gradient text for headline emphasis */
+  .text-gradient {
+    @apply bg-telemetry-gradient bg-clip-text text-transparent;
   }
 }
