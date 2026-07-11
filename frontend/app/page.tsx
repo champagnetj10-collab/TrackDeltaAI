@@ -1,9 +1,12 @@
-import Link from 'next/link'
+'use client'
+
 import { Brain, LineChart, Target, ShieldCheck, UploadCloud, BarChart3, ArrowRight } from 'lucide-react'
 import { ButtonLink } from '@/components/ui/Button'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import TelemetryShowcase from '@/components/marketing/TelemetryShowcase'
+import Reveal from '@/components/marketing/Reveal'
+import { useParallax } from '@/hooks/useParallax'
 
 const PILLARS = [
   {
@@ -31,6 +34,8 @@ const STEPS = [
 ]
 
 export default function LandingPage() {
+  const heroGlowRef = useParallax<HTMLDivElement>(0.12)
+
   return (
     <div className="min-h-screen bg-delta-950">
       <MarketingNav />
@@ -39,6 +44,7 @@ export default function LandingPage() {
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative overflow-hidden">
           <div
+            ref={heroGlowRef}
             className="absolute inset-0 bg-telemetry-gradient-soft opacity-40 blur-3xl -z-10"
             aria-hidden="true"
           />
@@ -83,8 +89,8 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-6 py-14">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
               {STEPS.map(({ icon: Icon, label, body }, i) => (
-                <div key={label} className="relative animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="w-11 h-11 rounded-xl bg-delta-900 border border-delta-700 flex items-center justify-center mb-4">
+                <Reveal key={label} delay={i * 100} className="relative">
+                  <div className="w-11 h-11 rounded-xl bg-delta-900 border border-delta-700 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110 hover:border-delta-600/60">
                     <Icon size={19} className="text-delta-400" />
                   </div>
                   <p className="text-white font-semibold text-sm mb-1">
@@ -92,7 +98,7 @@ export default function LandingPage() {
                     {label}
                   </p>
                   <p className="text-delta-400 text-sm leading-relaxed">{body}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -100,32 +106,36 @@ export default function LandingPage() {
 
         {/* ── Founding principles ─────────────────────────────────────── */}
         <section className="max-w-6xl mx-auto px-6 py-24">
-          <div className="max-w-xl mb-14">
+          <Reveal className="max-w-xl mb-14">
             <p className="text-delta-500 text-xs font-semibold uppercase tracking-widest mb-3">Why TrackDelta</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
               Built for drivers who already know they're leaving time on the table.
             </h2>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {PILLARS.map(({ icon: Icon, label, body }) => (
-              <div
-                key={label}
-                className="group bg-delta-900 border border-delta-800 hover:border-delta-600/60 rounded-2xl p-6 transition-colors duration-200"
-              >
-                <div className="w-10 h-10 rounded-lg bg-delta-950 border border-delta-800 flex items-center justify-center mb-5 group-hover:border-delta-600/50 transition-colors">
-                  <Icon size={18} className="text-delta-400" />
+            {PILLARS.map(({ icon: Icon, label, body }, i) => (
+              <Reveal key={label} delay={i * 120}>
+                <div className="group h-full bg-delta-900 border border-delta-800 hover:border-delta-600/60 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-delta-600/10">
+                  <div className="w-10 h-10 rounded-lg bg-delta-950 border border-delta-800 flex items-center justify-center mb-5 group-hover:border-delta-600/50 group-hover:scale-110 transition-all duration-300">
+                    <Icon size={18} className="text-delta-400" />
+                  </div>
+                  <p className="text-white font-semibold mb-2">{label}</p>
+                  <p className="text-delta-400 text-sm leading-relaxed">{body}</p>
                 </div>
-                <p className="text-white font-semibold mb-2">{label}</p>
-                <p className="text-delta-400 text-sm leading-relaxed">{body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         {/* ── Final CTA ────────────────────────────────────────────────── */}
         <section className="max-w-6xl mx-auto px-6 pb-24">
-          <div className="relative overflow-hidden rounded-3xl bg-delta-gradient border border-delta-700/50 px-8 py-16 sm:px-16 text-center">
+          <Reveal className="relative overflow-hidden rounded-3xl bg-delta-gradient border border-delta-700/50 px-8 py-16 sm:px-16 text-center group/cta">
+            {/* Slow ambient drift behind the CTA copy, purely decorative */}
+            <div
+              className="absolute inset-0 bg-telemetry-gradient opacity-0 group-hover/cta:opacity-20 transition-opacity duration-700"
+              aria-hidden="true"
+            />
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
                 Every lap is an opportunity.
@@ -138,7 +148,7 @@ export default function LandingPage() {
                 <ArrowRight size={18} />
               </ButtonLink>
             </div>
-          </div>
+          </Reveal>
         </section>
       </main>
 

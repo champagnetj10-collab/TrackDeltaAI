@@ -37,7 +37,20 @@ type LinkProps = BaseProps &
   React.ComponentProps<typeof Link> & { href: string }
 
 const base =
-  'inline-flex items-center justify-center font-semibold transition-all duration-150 disabled:opacity-45 disabled:pointer-events-none active:scale-[0.98] whitespace-nowrap'
+  'group/btn relative isolate overflow-hidden inline-flex items-center justify-center font-semibold ' +
+  'transition duration-200 ease-out disabled:opacity-45 disabled:pointer-events-none ' +
+  'active:scale-[0.97] hover:-translate-y-px whitespace-nowrap'
+
+/** Diagonal light sheen that sweeps across on hover — primary CTAs only, where it reads as premium rather than noisy. */
+function Sheen({ variant }: { variant: Variant }) {
+  if (variant !== 'primary') return null
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute inset-y-0 w-1/3 -skew-x-12 bg-white/25 opacity-0 group-hover/btn:opacity-100 group-hover/btn:animate-sweep"
+    />
+  )
+}
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = 'primary', size = 'md', loading, fullWidth, className, disabled, children, ...props },
@@ -50,6 +63,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={cn(base, VARIANT_CLASSES[variant], SIZE_CLASSES[size], fullWidth && 'w-full', className)}
       {...props}
     >
+      <Sheen variant={variant} />
       {loading && (
         <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
       )}
@@ -64,6 +78,7 @@ export function ButtonLink({ variant = 'primary', size = 'md', fullWidth, classN
       className={cn(base, VARIANT_CLASSES[variant], SIZE_CLASSES[size], fullWidth && 'w-full', className)}
       {...props}
     >
+      <Sheen variant={variant} />
       {children}
     </Link>
   )

@@ -68,6 +68,18 @@ const config: Config = {
           from: { strokeDashoffset: '1000' },
           to: { strokeDashoffset: '0' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { opacity: '0.35', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(1.06)' },
+        },
+        sweep: {
+          from: { transform: 'translateX(-120%)' },
+          to: { transform: 'translateX(220%)' },
+        },
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -76,6 +88,9 @@ const config: Config = {
         'scale-in': 'scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
         shimmer: 'shimmer 2s linear infinite',
         'draw-line': 'draw-line 1.8s ease-out forwards',
+        float: 'float 6s ease-in-out infinite',
+        'glow-pulse': 'glow-pulse 4s ease-in-out infinite',
+        sweep: 'sweep 1.1s ease-in-out',
       },
     },
   },
