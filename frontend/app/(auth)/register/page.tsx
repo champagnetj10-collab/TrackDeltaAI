@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import AuthShell from '@/components/auth/AuthShell'
+import AuthMessageCard from '@/components/auth/AuthMessageCard'
+import { Input, FormError } from '@/components/ui/Input'
+import { Button, ButtonLink } from '@/components/ui/Button'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,112 +48,73 @@ export default function RegisterPage() {
 
   if (verificationSent) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="text-4xl mb-4">✉️</div>
-          <h2 className="text-xl font-bold text-white mb-2">Check your email</h2>
-          <p className="text-slate-400 text-sm">
-            We sent a verification link to <strong className="text-white">{email}</strong>.
-            Click it to activate your account and meet Delta.
-          </p>
-          <p className="mt-4 text-slate-500 text-xs">
-            Didn&apos;t receive it? Check your spam folder or{' '}
-            <button
-              onClick={() => setVerificationSent(false)}
-              className="text-delta-400 hover:text-delta-300"
-            >
-              try again
-            </button>
-            .
-          </p>
-        </div>
-      </div>
+      <AuthMessageCard
+        icon={Mail}
+        title="Check your email"
+        footer={
+          <ButtonLink href="/login" variant="secondary" size="sm">
+            Back to sign in
+          </ButtonLink>
+        }
+      >
+        We sent a verification link to <strong className="text-white">{email}</strong>.
+        Click it to activate your account and meet Delta.
+      </AuthMessageCard>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-white">
-            Track<span className="text-delta-500">Delta</span>
-          </Link>
-          <p className="mt-1 text-slate-400 text-sm">Create your free account</p>
-        </div>
+    <AuthShell title="Create your account" subtitle="Free forever. No credit card required.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          id="displayName"
+          type="text"
+          label="Display name"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          required
+          autoComplete="name"
+          placeholder="Your racing name"
+        />
+        <Input
+          id="email"
+          type="email"
+          label="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+        />
+        <Input
+          id="password"
+          type="password"
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="Min. 8 characters"
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Display name
-            </label>
-            <input
-              id="displayName"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              required
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent"
-              placeholder="Your racing name"
-            />
-          </div>
+        {error && <FormError message={error} />}
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent"
-              placeholder="you@example.com"
-            />
-          </div>
+        <Button type="submit" loading={loading} fullWidth>
+          {loading ? 'Creating account...' : "Create account — it's free"}
+        </Button>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent"
-              placeholder="Min. 8 characters"
-            />
-          </div>
-
-          {error && (
-            <p role="alert" className="text-sm text-red-400 bg-red-950 border border-red-800 rounded-lg px-4 py-2">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-delta-600 hover:bg-delta-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
-          >
-            {loading ? 'Creating account...' : 'Create account — it\'s free'}
-          </button>
-
-          <p className="text-xs text-slate-500 text-center">
-            No credit card required. Free tier includes 3 sessions per month.
-          </p>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Already have an account?{' '}
-          <Link href="/login" className="text-delta-400 hover:text-delta-300 transition-colors">
-            Sign in
-          </Link>
+        <p className="text-xs text-delta-600 text-center">
+          No credit card required. Free tier includes 3 sessions per month.
         </p>
-      </div>
-    </div>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-delta-500">
+        Already have an account?{' '}
+        <Link href="/login" className="text-delta-400 hover:text-white font-medium transition-colors">
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   )
 }

@@ -2,8 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import AuthShell from '@/components/auth/AuthShell'
+import AuthMessageCard from '@/components/auth/AuthMessageCard'
+import { Input, FormError } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
 
 export default function UpdatePasswordPage() {
   const router = useRouter()
@@ -45,91 +49,44 @@ export default function UpdatePasswordPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-delta-950 flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="w-14 h-14 rounded-full bg-delta-900 border border-delta-700 flex items-center justify-center mx-auto mb-6">
-            <span className="text-2xl">✓</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Password updated</h1>
-          <p className="text-delta-300">Taking you to your dashboard...</p>
-        </div>
-      </div>
+      <AuthMessageCard icon={CheckCircle2} title="Password updated">
+        Taking you to your dashboard...
+      </AuthMessageCard>
     )
   }
 
   return (
-    <div className="min-h-screen bg-delta-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <span className="text-2xl font-bold tracking-tight">
-            <span className="text-white">Track</span>
-            <span className="text-delta-400">Delta</span>
-          </span>
-        </div>
+    <AuthShell title="Set a new password" subtitle="Choose a new password for your account">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          id="password"
+          type="password"
+          label="New password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Min. 8 characters"
+        />
+        <Input
+          id="confirmPassword"
+          type="password"
+          label="Confirm new password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Re-enter password"
+        />
 
-        <div className="bg-delta-900 border border-delta-800 rounded-xl p-8">
-          <h1 className="text-xl font-semibold text-white mb-2">Set a new password</h1>
-          <p className="text-delta-400 text-sm mb-6">
-            Choose a new password for your account.
-          </p>
+        {error && <FormError message={error} />}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-delta-300 mb-1.5">
-                New password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full bg-delta-950 border border-delta-700 rounded-lg px-3.5 py-2.5 text-white placeholder-delta-600 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent text-sm"
-                placeholder="Min. 8 characters"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-delta-300 mb-1.5">
-                Confirm new password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full bg-delta-950 border border-delta-700 rounded-lg px-3.5 py-2.5 text-white placeholder-delta-600 focus:outline-none focus:ring-2 focus:ring-delta-500 focus:border-transparent text-sm"
-                placeholder="Re-enter password"
-              />
-            </div>
-
-            {error && (
-              <div role="alert" className="bg-red-950 border border-red-800 rounded-lg px-4 py-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-delta-500 hover:bg-delta-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
-            >
-              {loading ? 'Updating...' : 'Update password'}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-delta-500 text-sm mt-6">
-          <Link href="/login" className="hover:text-white transition-colors">
-            Back to sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+        <Button type="submit" loading={loading} fullWidth>
+          {loading ? 'Updating...' : 'Update password'}
+        </Button>
+      </form>
+    </AuthShell>
   )
 }
