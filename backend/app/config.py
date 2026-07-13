@@ -1,6 +1,21 @@
 """
 TrackDelta AI — Application Configuration
 All settings are read from environment variables.
+
+Required for the app to boot at all (no default — Settings() raises if
+missing): DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY,
+SUPABASE_SERVICE_ROLE_KEY. Every request touches the database and/or
+Supabase auth, so there's no meaningful degraded mode without these.
+
+Deliberately NOT required to boot: ANTHROPIC_API_KEY, STRIPE_SECRET_KEY,
+STRIPE_WEBHOOK_SECRET. These power specific features (Delta's narrative
+debrief; billing) that are only reached well after startup, on specific
+requests/tasks — the app (including GET /health) must come up and serve
+traffic without them configured. Each is validated lazily, at the point
+where that specific feature is actually invoked:
+  - Anthropic: DeltaVoice.__init__ (pipeline/llm/delta_voice.py)
+  - Stripe:    _require_stripe_configured() and the webhook handler
+               (app/routers/subscriptions.py)
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,7 +26,7 @@ class Settings(BaseSettings):
     # --- Environment ---
     environment: str = "local"
 
-    # --- Database ---
+    # --- Database (required to boot) ---
     database_url: str
 
     # --- Redis ---
@@ -24,7 +39,7 @@ class Settings(BaseSettings):
     # in staging/production, where the pipeline must run asynchronously.
     celery_task_always_eager: bool = False
 
-    # --- Supabase ---
+    # --- Supabase (required to boot) ---
     supabase_url: str
     supabase_anon_key: str
     supabase_service_role_key: str
@@ -37,13 +52,15 @@ class Settings(BaseSettings):
     s3_bucket_processed: str = "trackdelta-processed-features"
     s3_bucket_debriefs: str = "trackdelta-debriefs"
 
-    # --- Anthropic ---
-    anthropic_api_key: str
+    # --- Anthropic (optional at boot — required only to generate a debrief;
+    # DeltaVoice.__init__ raises a clear error if this is blank when actually used) ---
+    anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-5"
 
-    # --- Stripe ---
-    stripe_secret_key: str
-    stripe_webhook_secret: str
+    # --- Stripe (optional at boot — required only for billing endpoints;
+    # _require_stripe_configured() / the webhook handler check this when used) ---
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
     stripe_price_id_pro_monthly: str = ""
     stripe_price_id_pro_annual: str = ""
 

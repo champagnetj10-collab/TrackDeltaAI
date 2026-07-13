@@ -214,7 +214,20 @@ class DeltaVoice:
 
     def __init__(self, client: "anthropic.Anthropic | None" = None) -> None:
         self.model = settings.anthropic_model
-        self._client = client or anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        if client is None:
+            # ANTHROPIC_API_KEY is intentionally optional at app boot (see
+            # app/config.py) — DeltaVoice is only ever constructed lazily,
+            # when a session actually reaches the narrative-debrief stage
+            # (ProcessSessionTask.delta_voice), so this is where the real
+            # "is this feature configured" check belongs, not at startup.
+            if not settings.anthropic_api_key:
+                raise RuntimeError(
+                    "ANTHROPIC_API_KEY is not configured. Delta's narrative "
+                    "debrief can't be generated without it — set the "
+                    "environment variable to enable this feature."
+                )
+            client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self._client = client
 
     def generate_debrief(
         self,
