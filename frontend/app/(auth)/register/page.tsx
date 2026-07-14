@@ -107,6 +107,12 @@ export default function RegisterPage() {
         <p className="text-xs text-delta-600 text-center">
           No credit card required. Free tier includes 3 sessions per month.
         </p>
+        <p className="text-xs text-delta-600 text-center">
+          By creating an account, you agree to our{' '}
+          <Link href="/terms" className="text-delta-400 hover:text-white transition-colors">Terms</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="text-delta-400 hover:text-white transition-colors">Privacy Policy</Link>.
+        </p>
       </form>
 
       <p className="mt-6 text-center text-sm text-delta-500">
