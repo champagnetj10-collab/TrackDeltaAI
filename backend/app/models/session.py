@@ -1,8 +1,10 @@
 """Session model — one uploaded .ibt file from a driver."""
 import uuid
-from datetime import datetime, date
-from sqlalchemy import String, Integer, BigInteger, Date, DateTime, ForeignKey, Text, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import date, datetime
+
+from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database import Base
 
 

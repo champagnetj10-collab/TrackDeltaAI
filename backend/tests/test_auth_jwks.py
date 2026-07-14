@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import base64
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -97,7 +97,7 @@ def make_es256_token(ec_keypair, user_id, email=None, kid=KID, alg="ES256") -> s
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
     ).decode()
-    payload = {"sub": str(user_id), "exp": datetime.now(timezone.utc) + timedelta(hours=1)}
+    payload = {"sub": str(user_id), "exp": datetime.now(UTC) + timedelta(hours=1)}
     if email:
         payload["email"] = email
     return jwt.encode(payload, priv_pem, algorithm=alg, headers={"kid": kid})

@@ -29,13 +29,12 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 import numpy as np
 import pandas as pd
 import yaml
-
 
 # ── Binary layout constants (iRacing SDK) ───────────────────────────────────
 
@@ -279,7 +278,7 @@ class IbtParser:
             num_rows = max(0, (len(raw_bytes) - data_offset) // row_size)
 
         try:
-            session_date = datetime.fromtimestamp(session_start_date, tz=timezone.utc).date()
+            session_date = datetime.fromtimestamp(session_start_date, tz=UTC).date()
         except (OSError, OverflowError, ValueError):
             session_date = date.today()
 

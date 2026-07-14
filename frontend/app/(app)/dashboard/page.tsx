@@ -9,7 +9,7 @@ import { formatLapTime, formatSessionType } from '@/lib/utils'
 import { PageSkeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Badge } from '@/components/ui/Badge'
-import { Button, ButtonLink } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)

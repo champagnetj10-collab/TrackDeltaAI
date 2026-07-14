@@ -118,7 +118,7 @@ export default function BillingPage() {
             </div>
             {uploadsUsed >= (uploadsLimit ?? 3) && (
               <p className="text-apex-400 text-xs mt-2">
-                You've used all your free sessions this month. Upgrade to keep going.
+                You&apos;ve used all your free sessions this month. Upgrade to keep going.
               </p>
             )}
           </div>

@@ -20,22 +20,22 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from celery import Task
 from sqlalchemy.orm import Session as DbSession
 
 from app.config import settings
 from app.database import SessionLocal
-from app.models.session import Session as SessionModel
 from app.models.debrief import Debrief
 from app.models.dna import DriverDNA
-from pipeline.worker import celery_app
-from pipeline.parser.ibt_parser import IbtParser
-from pipeline.extraction.feature_extractor import FeatureExtractor
-from pipeline.dna.dna_engine import DnaEngine
+from app.models.session import Session as SessionModel
 from pipeline.coaching.coaching_engine import CoachingEngine
+from pipeline.dna.dna_engine import DnaEngine
+from pipeline.extraction.feature_extractor import FeatureExtractor
 from pipeline.llm.delta_voice import DeltaVoice
+from pipeline.parser.ibt_parser import IbtParser
+from pipeline.worker import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -255,7 +255,7 @@ def process_session_task(self: ProcessSessionTask, session_id: str) -> dict:
 
 def _mark_processing(db: DbSession, session: SessionModel, status: str) -> None:
     session.processing_status = status
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if status == "parsing" and session.processing_started_at is None:
         session.processing_started_at = now
     elif status == "completed":

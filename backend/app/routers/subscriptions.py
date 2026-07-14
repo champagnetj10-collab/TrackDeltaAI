@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 import stripe
@@ -168,7 +168,7 @@ async def stripe_webhook(request: Request, db: DB) -> dict[str, str]:
             user.subscription_status = obj.get("status")
             period_end = obj.get("current_period_end")
             if period_end:
-                user.subscription_period_end = datetime.fromtimestamp(period_end, tz=timezone.utc)
+                user.subscription_period_end = datetime.fromtimestamp(period_end, tz=UTC)
         elif event_type == "customer.subscription.deleted":
             user.subscription_tier = "free"
             user.subscription_status = "canceled"

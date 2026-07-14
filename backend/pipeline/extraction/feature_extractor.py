@@ -48,7 +48,6 @@ import pandas as pd
 
 from pipeline.parser.ibt_parser import ParseResult
 
-
 # ── Data contracts ─────────────────────────────────────────────────────────────
 
 @dataclass

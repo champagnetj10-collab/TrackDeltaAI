@@ -8,7 +8,7 @@ these tests don't require a real Postgres connection.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
@@ -33,7 +33,7 @@ def make_token(
     display_name: str | None = None,
     secret: str = TEST_SECRET,
 ) -> str:
-    payload: dict = {"sub": str(user_id), "exp": datetime.now(timezone.utc) + timedelta(hours=1)}
+    payload: dict = {"sub": str(user_id), "exp": datetime.now(UTC) + timedelta(hours=1)}
     if email:
         payload["email"] = email
     if display_name:

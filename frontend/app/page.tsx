@@ -109,7 +109,7 @@ export default function LandingPage() {
           <Reveal className="max-w-xl mb-14">
             <p className="text-delta-500 text-xs font-semibold uppercase tracking-widest mb-3">Why TrackDelta</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
-              Built for drivers who already know they're leaving time on the table.
+              Built for drivers who already know they&apos;re leaving time on the table.
             </h2>
           </Reveal>
 

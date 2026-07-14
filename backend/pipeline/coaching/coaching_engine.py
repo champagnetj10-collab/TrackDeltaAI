@@ -51,9 +51,10 @@ from typing import Literal
 
 from app.models.dna import DriverDNA
 from app.models.session import Session as SessionModel
+from pipeline.dna.dna_engine import (
+    DnaUpdateSummary,  # noqa: F401  (part of the documented interface)
+)
 from pipeline.extraction.feature_extractor import CornerFeatures, FeaturesResult
-from pipeline.dna.dna_engine import DnaUpdateSummary  # noqa: F401  (part of the documented interface)
-
 
 Category = Literal["braking", "throttle", "steering", "consistency", "risk"]
 

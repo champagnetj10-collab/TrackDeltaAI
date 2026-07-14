@@ -1,17 +1,18 @@
 """Sessions router — upload, status, debrief retrieval."""
 import uuid
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.user import User
-from app.models.session import Session as SessionModel
 from app.models.debrief import Debrief
+from app.models.session import Session as SessionModel
+from app.models.user import User
 from app.services.storage import StorageService
-from app.config import settings
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 

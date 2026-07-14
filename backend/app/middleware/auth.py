@@ -15,7 +15,7 @@ import uuid
 from typing import Any
 
 import httpx
-from fastapi import HTTPException, Security, Depends
+from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session

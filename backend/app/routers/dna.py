@@ -1,13 +1,13 @@
 """DNA router — Driver DNA profile retrieval."""
-import uuid
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.user import User
 from app.models.dna import DriverDNA
+from app.models.user import User
 
 router = APIRouter(prefix="/dna", tags=["dna"])
 

@@ -20,8 +20,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.models.session import Session as SessionModel
 from pipeline.tasks import process_session as process_session_module

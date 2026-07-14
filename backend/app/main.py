@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import sessions, users, dna, subscriptions
+from app.routers import dna, sessions, subscriptions, users
 
 # Every module below calls logging.getLogger(__name__) and logs at INFO
 # (pipeline processing steps, DNA updates, etc.). Without this, Python's

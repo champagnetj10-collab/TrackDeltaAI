@@ -93,7 +93,6 @@ import numpy as np
 from app.models.dna import DriverDNA
 from pipeline.extraction.feature_extractor import FeaturesResult
 
-
 EWMA_ALPHA: float = 0.3
 
 # Classification thresholds — DNA Technical Spec §5.2

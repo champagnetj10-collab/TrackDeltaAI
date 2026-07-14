@@ -1,17 +1,18 @@
 from logging.config import fileConfig
+
 from sqlalchemy import create_engine, pool
+
+import app.models.debrief  # noqa: F401
+import app.models.dna  # noqa: F401
+import app.models.session  # noqa: F401
+import app.models.subscription_event  # noqa: F401
+import app.models.track  # noqa: F401
+import app.models.user  # noqa: F401
 from alembic import context
+from app.config import settings
 
 # Import all models so Alembic can detect them
 from app.database import Base
-import app.models.user                 # noqa: F401
-import app.models.session              # noqa: F401
-import app.models.dna                  # noqa: F401
-import app.models.debrief              # noqa: F401
-import app.models.track                # noqa: F401
-import app.models.subscription_event   # noqa: F401
-
-from app.config import settings
 
 config = context.config
 

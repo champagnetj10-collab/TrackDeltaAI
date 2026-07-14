@@ -92,7 +92,7 @@ export default function DnaPage() {
       <div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Driver DNA</h1>
         <p className="text-delta-400 text-sm mt-1">
-          Delta's evolving model of your driving style — built from{' '}
+          Delta&apos;s evolving model of your driving style — built from{' '}
           <strong className="text-white">{dna.total_sessions ?? 0} sessions</strong> and{' '}
           <strong className="text-white">{dna.total_clean_laps ?? 0} clean laps</strong>.
         </p>

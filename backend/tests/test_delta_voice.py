@@ -9,11 +9,15 @@ import pytest
 
 from app.models.dna import DriverDNA
 from app.models.session import Session as SessionModel
-from pipeline.coaching.coaching_engine import CoachingOutput, Opportunity, PracticePlanItem, Strength
+from pipeline.coaching.coaching_engine import (
+    CoachingOutput,
+    Opportunity,
+    PracticePlanItem,
+    Strength,
+)
 from pipeline.dna.dna_engine import DnaUpdateSummary
 from pipeline.extraction.feature_extractor import FeaturesResult
 from pipeline.llm.delta_voice import DeltaVoice
-
 
 VALID_DEBRIEF: dict = {
     "version": "1.0",

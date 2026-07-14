@@ -10,7 +10,7 @@ required before trusting this in production (see roadmap Sprint 1.1 DoD).
 from __future__ import annotations
 
 import struct
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -158,7 +158,7 @@ def build_synthetic_ibt(
     )
     varbuf_bytes = struct.pack(_VARBUF_FORMAT, 0, data_offset, 0, 0)
 
-    session_start_date = int(datetime(2026, 6, 30, tzinfo=timezone.utc).timestamp())
+    session_start_date = int(datetime(2026, 6, 30, tzinfo=UTC).timestamp())
     session_end_time = num_rows / tick_rate
     disk_sub_bytes = struct.pack(
         _DISK_SUBHEADER_FORMAT,

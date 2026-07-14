@@ -1,7 +1,9 @@
 """Track and corner reference data — used by the feature extraction pipeline."""
 from datetime import datetime
-from sqlalchemy import String, Float, Boolean, Integer, Text, DateTime, ForeignKey, func
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database import Base
 
 

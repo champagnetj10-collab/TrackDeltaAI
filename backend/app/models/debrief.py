@@ -1,9 +1,11 @@
 """Debrief model — Delta's complete coaching output for one session."""
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, func
+
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database import Base
 
 

@@ -1,9 +1,11 @@
 """Driver DNA model — versioned snapshots of a driver's profile."""
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Boolean, DateTime, ForeignKey, func
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database import Base
 
 

@@ -103,7 +103,7 @@ export default function SessionDebriefPage() {
         <div className="relative overflow-hidden bg-delta-900 border border-delta-700 rounded-2xl px-6 py-5 animate-slide-up">
           <div className="absolute top-0 left-0 w-1 h-full bg-telemetry-gradient" aria-hidden="true" />
           <p className="text-delta-400 text-xs font-semibold uppercase tracking-widest mb-2">
-            Delta's take
+            Delta&apos;s take
           </p>
           <p className="text-white text-lg font-medium leading-snug">{content.headline}</p>
         </div>
@@ -160,7 +160,7 @@ export default function SessionDebriefPage() {
       {/* Strengths */}
       {content?.strengths?.length > 0 && (
         <div className="animate-slide-up">
-          <h2 className="text-white font-semibold mb-3">What's working</h2>
+          <h2 className="text-white font-semibold mb-3">What&apos;s working</h2>
           <div className="space-y-3">
             {content.strengths.map((s: any, i: number) => (
               <div key={i} className="bg-delta-900 border border-emerald-500/20 rounded-xl px-5 py-4">

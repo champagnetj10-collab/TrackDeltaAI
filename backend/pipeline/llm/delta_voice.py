@@ -101,9 +101,9 @@ import anthropic
 from app.config import settings
 from app.models.dna import DriverDNA
 from app.models.session import Session as SessionModel
-from pipeline.extraction.feature_extractor import FeaturesResult
 from pipeline.coaching.coaching_engine import CoachingOutput
 from pipeline.dna.dna_engine import DnaUpdateSummary
+from pipeline.extraction.feature_extractor import FeaturesResult
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +212,7 @@ class DeltaVoice:
         "strengths", "practice_plan", "dna_update", "lap_chart",
     })
 
-    def __init__(self, client: "anthropic.Anthropic | None" = None) -> None:
+    def __init__(self, client: anthropic.Anthropic | None = None) -> None:
         self.model = settings.anthropic_model
         if client is None:
             # ANTHROPIC_API_KEY is intentionally optional at app boot (see
