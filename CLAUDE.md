@@ -34,13 +34,13 @@ TrackDelta AI is the world's first AI race engineer that understands the driver 
 | Backend API | Python FastAPI + Uvicorn |
 | Task Queue | Celery + Redis |
 | Database | PostgreSQL (Supabase) + SQLAlchemy + Alembic |
-| File Storage | AWS S3 (raw telemetry + processed features) |
-| Auth | Supabase Auth (JWT) |
+| File Storage | Supabase Storage (native REST API — raw telemetry + processed features + debriefs). Not AWS S3, despite the `s3_bucket_*` setting names in `config.py`; those are just bucket-name strings, no AWS credentials involved. See `app/services/storage.py`. |
+| Auth | Supabase Auth (JWT — JWKS/ES256 for current projects, HS256 fallback for legacy) |
 | LLM | Anthropic Claude API |
 | Payments | Stripe |
-| Email | Resend |
-| Frontend Hosting | Vercel |
-| Backend Hosting | Railway |
+| Email | Supabase Auth's built-in email delivery (verification, password reset) — not Resend. `RESEND_API_KEY` exists in config but no code calls the Resend API; it's unused. See "Known Gaps" below. |
+| Frontend Hosting | Vercel (not yet deployed as of this writing — see "Known Gaps") |
+| Backend Hosting | Railway (live at `trackdeltaai-production.up.railway.app`, auto-deploys on push to `master`) |
 
 ---
 
@@ -49,14 +49,24 @@ TrackDelta AI is the world's first AI race engineer that understands the driver 
 ```
 trackdelta/
 ├── frontend/          # Next.js 14 web application
-├── backend/           # FastAPI REST API
-├── pipeline/          # Celery async processing pipeline
-├── docs/              # Product and architecture documentation
-├── .github/workflows/ # GitHub Actions CI
-├── docker-compose.yml # Local development environment
-├── .env.example       # All required environment variables (documented)
-└── CLAUDE.md          # This file
+├── backend/
+│   ├── app/            # FastAPI REST API
+│   ├── pipeline/        # Celery async processing pipeline (parser, DNA, coaching, LLM voice)
+│   ├── alembic/         # DB migrations
+│   ├── tests/
+│   └── scripts/validate_ibt.py  # manual real-.ibt validation tool (see "Known Gaps")
+├── marketing/          # Content/growth playbooks — not engineering, see marketing/README.md
+├── .github/workflows/  # GitHub Actions CI (runs on push/PR to master)
+├── docker-compose.yml  # Local development environment
+├── .env.example        # All required environment variables (documented)
+└── CLAUDE.md           # This file
 ```
+
+Product/architecture docs (`PRD`, `MVP Feature Spec`, `User Journey`, `Driver DNA Spec`,
+`System Architecture`, `90-Day Roadmap`) live as `.md` files at the **repo root**, not in a
+`docs/` directory — an empty `docs/` and empty top-level `pipeline/` still exist as inert
+leftovers from the original scaffold; the real pipeline code has always lived under
+`backend/pipeline/`, co-located with the API for a single Railway service/Dockerfile.
 
 ---
 
@@ -65,51 +75,73 @@ trackdelta/
 Intelligence lives in the engineering layer. The LLM is the voice, not the brain.
 
 ```
-.ibt Upload → S3
+.ibt Upload → Supabase Storage
     ↓
-Telemetry Parser     (ibt_parser.py)    — parse binary .ibt format
+Telemetry Parser     (backend/pipeline/parser/ibt_parser.py)     — parse binary .ibt format
     ↓
-Feature Extractor    (feature_extractor.py) — per-corner braking/throttle/speed/steering
+Feature Extractor    (backend/pipeline/extraction/feature_extractor.py) — per-corner braking/throttle/speed/steering
     ↓
-Driver DNA Engine    (dna_engine.py)    — EWMA update, classification, confidence scoring
+Driver DNA Engine    (backend/pipeline/dna/dna_engine.py)        — EWMA update, classification, confidence scoring
     ↓
-Coaching Engine      (coaching_engine.py) — identify opportunities, strengths, time estimate
+Coaching Engine      (backend/pipeline/coaching/coaching_engine.py) — identify opportunities, strengths, time estimate
     ↓
-Delta Voice (LLM)    (delta_voice.py)   — Anthropic API → natural language debrief
+Delta Voice (LLM)    (backend/pipeline/llm/delta_voice.py)       — Anthropic API → natural language debrief
     ↓
 Store debrief → Notify user
 ```
 
 **Never pass raw telemetry to the LLM.** The LLM only receives structured coaching output + DNA summary.
 
+All five stages are fully implemented and unit-tested (104 backend tests, all synthetic/mocked
+data). **None of it has been run against a real .ibt file or a real Anthropic/Stripe call** —
+see "Known Gaps" below before treating this as production-validated.
+
 ---
 
-## Current Phase: Phase 0 — Foundation
+## Current Phase: Beta Readiness
 
-**Goal:** Infrastructure ready; auth working; database schema deployed; Docker Compose running.
+Phase 0 (Foundation) through Phase 4 (LLM voice) are all implemented. The product's full
+telemetry-to-debrief pipeline exists, is unit-tested, and the backend is live in production
+on Railway with a real Supabase project (migrations applied, RLS enabled, storage buckets
+created). The frontend is fully built (auth, dashboard, upload, session/DNA/debrief views,
+billing, settings) but **not yet deployed** — it currently only runs locally.
 
-### Sprint 0.1 — Tooling (Days 1–4) ← WE ARE HERE
-- [x] Monorepo structure
-- [x] Next.js 14 frontend scaffold
-- [x] FastAPI backend scaffold
-- [x] Pipeline skeleton
-- [x] Docker Compose (PostgreSQL + Redis + API + Worker)
-- [x] .env.example
-- [x] GitHub Actions CI
-- [ ] Pre-commit hooks
+**What's done:**
+- [x] Monorepo structure, Next.js 14 frontend, FastAPI backend, Celery pipeline skeleton
+- [x] Supabase project created; migrations 001 (schema) + 002 (RLS) applied to production
+- [x] Supabase Auth wired to FastAPI JWT middleware (JWKS + legacy HS256)
+- [x] Supabase Storage buckets created and configured (`trackdelta-raw-telemetry`,
+      `trackdelta-processed-features`, `trackdelta-debriefs`)
+- [x] `GET /health` and `GET /me` live in production
+- [x] Registration / login / password reset flows, authenticated app shell, dashboard
+- [x] Backend deployed to Railway (auto-deploy on push to `master`), CI green on both jobs
+- [x] Terms of Service / Privacy Policy pages, branded 404/error pages
 
-### Sprint 0.2 — Data Layer & Auth (Days 5–10)
-- [ ] Supabase project created
-- [ ] Database migrations run (Alembic)
-- [ ] Supabase Auth wired to FastAPI JWT middleware
-- [ ] S3 buckets created and configured
-- [ ] `GET /health` and `GET /me` endpoints working
-
-### Sprint 0.3 — Frontend Shell (Days 11–14)
-- [ ] Registration / login / password reset flows
-- [ ] Authenticated app shell with navigation
-- [ ] Dashboard empty state
-- [ ] Deploy to Vercel staging
+**Known Gaps — required before opening the beta:**
+- [ ] **Real `.ibt` file validation — PENDING INTEGRATION TESTING.** The parser, feature
+      extractor, DNA engine, and coaching engine have only ever run against synthetically
+      constructed test fixtures (104 passing unit tests) — never a real iRacing telemetry
+      dump. `backend/scripts/validate_ibt.py` exists specifically for this and has not yet
+      been run. **Do not treat the parser as trustworthy until this has been done and its
+      output manually cross-checked** against a remembered real session (track/car/lap
+      times/top speed) — see the script's own docstring for what a clean run does and does
+      not prove.
+- [ ] Stripe checkout/portal/webhook has never been exercised against a real Stripe account
+      (only a fake/mocked client in tests) — see `app/routers/subscriptions.py` docstring.
+- [ ] `delta_voice.py` (the Anthropic integration) has never called the real Anthropic API —
+      only a fake injected client in tests.
+- [ ] Frontend is not deployed to Vercel yet. Once it is, Railway's `FRONTEND_URL` env var
+      needs to be set to the real domain (used to build Stripe redirect URLs), and CORS
+      needs to allow that origin (currently falls back to `config.py`'s default of
+      `trackdelta.ai`/`www.trackdelta.ai` — update if the real domain differs).
+- [ ] `tracks` / `track_corners` reference data is completely empty in production — corner-
+      level coaching features degrade to session-level-only until this is seeded.
+- [ ] Email is fully handled by Supabase Auth's own shared SMTP (low rate limits, generic
+      `noreply@...` sender). For beta-scale signups with a branded sender address, configure
+      a custom SMTP provider in Supabase's Auth settings (Resend is already in the tech
+      stack/config for this purpose, just not wired up anywhere yet).
+- [ ] No rate limiting on the API and no error-monitoring/observability tooling (e.g. Sentry)
+      configured yet.
 
 ---
 
@@ -155,11 +187,15 @@ Delta is a calm, professional, trusted AI race engineer. When generating any Del
 | `backend/app/config.py` | All settings from env vars |
 | `backend/app/database.py` | SQLAlchemy engine + session |
 | `backend/alembic/versions/001_initial_schema.py` | Full DB schema |
-| `pipeline/tasks/process_session.py` | Main Celery task orchestrator |
-| `pipeline/parser/ibt_parser.py` | iRacing .ibt binary parser (Phase 1) |
-| `pipeline/dna/dna_engine.py` | Driver DNA EWMA update logic (Phase 2) |
-| `pipeline/coaching/coaching_engine.py` | Coaching output generation (Phase 3) |
-| `pipeline/llm/delta_voice.py` | Anthropic API integration (Phase 4) |
+| `backend/alembic/versions/002_row_level_security.py` | RLS policies (defense-in-depth; backend connects as table-owner and bypasses these) |
+| `backend/app/middleware/auth.py` | Supabase JWT verification (JWKS/HS256) |
+| `backend/app/services/storage.py` | Supabase Storage integration |
+| `backend/pipeline/tasks/process_session.py` | Main Celery task orchestrator |
+| `backend/pipeline/parser/ibt_parser.py` | iRacing .ibt binary parser — **unvalidated against real data, see Known Gaps** |
+| `backend/pipeline/dna/dna_engine.py` | Driver DNA EWMA update logic |
+| `backend/pipeline/coaching/coaching_engine.py` | Coaching output generation |
+| `backend/pipeline/llm/delta_voice.py` | Anthropic API integration — never called against the real API |
+| `backend/scripts/validate_ibt.py` | Manual diagnostic for validating the parser against a real `.ibt` file |
 | `frontend/app/(app)/sessions/[id]/page.tsx` | Debrief display page |
 | `frontend/app/(app)/dna/page.tsx` | Driver DNA profile page |
 
@@ -167,13 +203,16 @@ Delta is a calm, professional, trusted AI race engineer. When generating any Del
 
 ## Full Documentation
 
-All product and architecture decisions are documented in `/docs/`:
-- `PRD.md` — Product Requirements Document
+Product and architecture docs live as `.md` files at the **repo root** (not `/docs/` —
+see "Repository Structure" above):
+- `TrackDelta_AI_PRD.md` — Product Requirements Document
 - `01_MVP_Feature_Specification.md`
 - `02_User_Journey.md`
 - `03_Driver_DNA_Technical_Specification.md`
 - `04_System_Architecture.md`
 - `05_90_Day_Engineering_Roadmap.md`
+- `ROADMAP.md` — a newer/separate roadmap doc; check both this and `05_90_Day_...` for now
+  since they haven't been reconciled into one authoritative source
 
 When making architectural decisions, check these documents first.
 
