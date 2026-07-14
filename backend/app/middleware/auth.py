@@ -24,7 +24,10 @@ from app.config import settings
 from app.database import get_db
 from app.models.user import User
 
-security = HTTPBearer()
+# auto_error=False so a missing Authorization header reaches our own 401
+# handling below, instead of FastAPI's built-in HTTPBearer short-circuit
+# (which raises 403 — inconsistent with every other auth failure here).
+security = HTTPBearer(auto_error=False)
 
 _JWKS_CACHE_TTL_S = 3600
 _jwks_cache: dict[str, Any] = {"keys": [], "fetched_at": 0.0}
@@ -82,9 +85,11 @@ def _decode_token(credentials: HTTPAuthorizationCredentials) -> dict[str, Any]:
 
 
 def get_current_user_id(
-    credentials: HTTPAuthorizationCredentials = Security(security),
+    credentials: HTTPAuthorizationCredentials | None = Security(security),
 ) -> uuid.UUID:
     """Validates the Bearer JWT and returns the authenticated user's UUID."""
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     payload = _decode_token(credentials)
     user_id_str = payload.get("sub")
     if not user_id_str:
@@ -93,7 +98,7 @@ def get_current_user_id(
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Security(security),
+    credentials: HTTPAuthorizationCredentials | None = Security(security),
     db: Session = Depends(get_db),
 ) -> User:
     """
@@ -104,6 +109,8 @@ def get_current_user(
     we sync it into our own `users` table if a row doesn't exist yet. Email
     and display name are pulled straight from the verified JWT claims.
     """
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     payload = _decode_token(credentials)
     user_id_str = payload.get("sub")
     if not user_id_str:
