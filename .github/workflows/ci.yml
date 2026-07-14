@@ -76,6 +76,18 @@ jobs:
         run: mypy app/ pipeline/
         continue-on-error: true   # tracked separately; not yet a hard gate
 
+      - name: Bootstrap Supabase auth schema stub
+        # Migration 002 references auth.uid(), which only exists on Supabase's
+        # hosted Postgres. Stub it here so the migration's SQL is actually
+        # exercised in CI instead of skipped — the real value it returns
+        # doesn't matter since the backend connects as the table-owning role
+        # and bypasses RLS entirely (see 002_row_level_security.py docstring).
+        run: |
+          PGPASSWORD=trackdelta psql -h localhost -U trackdelta -d trackdelta_test -c "
+            CREATE SCHEMA IF NOT EXISTS auth;
+            CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS 'SELECT NULL::uuid';
+          "
+
       - name: Run migrations
         run: alembic upgrade head
 
