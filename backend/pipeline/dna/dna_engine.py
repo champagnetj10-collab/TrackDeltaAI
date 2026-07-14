@@ -288,7 +288,7 @@ class DnaEngine:
         """
         merged = dict(existing)
         for key, new_val in new_values.items():
-            if isinstance(new_val, (int, float)) and not isinstance(new_val, bool):
+            if isinstance(new_val, int | float) and not isinstance(new_val, bool):
                 old_val = existing.get(key)
                 merged[key] = new_val if old_val is None else alpha * new_val + (1 - alpha) * old_val
             else:
