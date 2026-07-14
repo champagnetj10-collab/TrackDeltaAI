@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
+from app.middleware.rate_limit import rate_limit
 from app.models.debrief import Debrief
 from app.models.session import Session as SessionModel
 from app.models.user import User
@@ -39,7 +40,11 @@ class ProcessingStatusResponse(BaseModel):
     processing_error: str | None
 
 
-@router.post("/upload-url", response_model=UploadUrlResponse)
+@router.post(
+    "/upload-url",
+    response_model=UploadUrlResponse,
+    dependencies=[rate_limit(10, 60, "sessions-upload-url")],
+)
 def request_upload_url(
     body: UploadUrlRequest,
     current_user: CurrentUser,
@@ -85,7 +90,10 @@ def request_upload_url(
     return UploadUrlResponse(session_id=session.id, presigned_url=presigned_url)
 
 
-@router.post("/{session_id}/upload-complete")
+@router.post(
+    "/{session_id}/upload-complete",
+    dependencies=[rate_limit(10, 60, "sessions-upload-complete")],
+)
 def upload_complete(
     session_id: uuid.UUID,
     body: UploadCompleteRequest,

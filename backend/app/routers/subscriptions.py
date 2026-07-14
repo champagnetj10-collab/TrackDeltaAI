@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
+from app.middleware.rate_limit import rate_limit
 from app.models.subscription_event import SubscriptionEvent
 from app.models.user import User
 
@@ -75,7 +76,11 @@ def get_current_subscription(current_user: CurrentUser) -> SubscriptionStatusRes
     )
 
 
-@router.post("/checkout", response_model=CheckoutResponse)
+@router.post(
+    "/checkout",
+    response_model=CheckoutResponse,
+    dependencies=[rate_limit(5, 60, "subscriptions-checkout")],
+)
 def create_checkout_session(
     body: CheckoutRequest, current_user: CurrentUser, db: DB
 ) -> CheckoutResponse:
@@ -113,7 +118,11 @@ def create_checkout_session(
     return CheckoutResponse(url=checkout_session.url)
 
 
-@router.post("/portal", response_model=PortalResponse)
+@router.post(
+    "/portal",
+    response_model=PortalResponse,
+    dependencies=[rate_limit(5, 60, "subscriptions-portal")],
+)
 def create_portal_session(current_user: CurrentUser) -> PortalResponse:
     _require_stripe_configured()
 
