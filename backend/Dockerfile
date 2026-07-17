@@ -31,4 +31,9 @@ COPY . .
 # ${PORT:-8000} still falls back to 8000 if PORT is ever unset (e.g. a
 # local `docker run` with no -e PORT=... passed) — not a hardcoded
 # production port, just a default for that one local/manual case.
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+#
+# PROCESS_TYPE branches the same image between the web service and the
+# Celery worker service, both deployed from this one Dockerfile. Unset (or
+# any value other than "worker") keeps the original uvicorn behavior, so
+# the existing web service's deploy config needs no changes.
+CMD if [ "$PROCESS_TYPE" = "worker" ]; then celery -A pipeline.worker worker --loglevel=info; else uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}; fi
