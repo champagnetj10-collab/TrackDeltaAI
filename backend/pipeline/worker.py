@@ -9,6 +9,20 @@ In development with Docker Compose:
 
 from celery import Celery
 
+# Import every model so SQLAlchemy's declarative registry knows about all
+# of them before any task runs — same reason alembic/env.py does this.
+# process_session_task only directly imports Session/DriverDNA/Debrief,
+# but Session.user_id's ForeignKey("users.id") can't resolve unless
+# app.models.user has been imported somewhere in this process too, which
+# nothing else in the worker's import graph does. Surfaced as
+# NoReferencedTableError the first time a task actually ran against a
+# real worker process.
+import app.models.debrief  # noqa: F401
+import app.models.dna  # noqa: F401
+import app.models.session  # noqa: F401
+import app.models.subscription_event  # noqa: F401
+import app.models.track  # noqa: F401
+import app.models.user  # noqa: F401
 from app.config import settings
 
 celery_app = Celery(
