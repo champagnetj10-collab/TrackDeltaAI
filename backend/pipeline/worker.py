@@ -31,7 +31,12 @@ celery_app.conf.update(
     task_max_retries=3,
     # Visibility timeout slightly longer than the longest expected task
     broker_transport_options={"visibility_timeout": 3600},
-    # Routing — all tasks go to the default queue for now
+    # Routing — all tasks go to the "default" queue for now. task_default_queue
+    # must match, or `celery worker` (no -Q flag) only ever consumes Celery's
+    # own default queue name ("celery") and every task routed here sits
+    # unconsumed forever — this was a real bug caught only once a worker
+    # actually ran against production Redis for the first time.
+    task_default_queue="default",
     task_routes={
         "pipeline.tasks.process_session.process_session_task": {"queue": "default"},
     },
