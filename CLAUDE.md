@@ -39,7 +39,7 @@ TrackDelta AI is the world's first AI race engineer that understands the driver 
 | LLM | Anthropic Claude API |
 | Payments | Stripe |
 | Email | Supabase Auth's built-in email delivery (verification, password reset) — not Resend. `RESEND_API_KEY` exists in config but no code calls the Resend API; it's unused. See "Known Gaps" below. |
-| Frontend Hosting | Vercel (not yet deployed as of this writing — see "Known Gaps") |
+| Frontend Hosting | Vercel (live at `frontend-nine-xi-85.vercel.app`, project `trackdelta/frontend`) |
 | Backend Hosting | Railway (live at `trackdeltaai-production.up.railway.app`, auto-deploys on push to `master`) |
 
 ---
@@ -101,10 +101,9 @@ see "Known Gaps" below before treating this as production-validated.
 ## Current Phase: Beta Readiness
 
 Phase 0 (Foundation) through Phase 4 (LLM voice) are all implemented. The product's full
-telemetry-to-debrief pipeline exists, is unit-tested, and the backend is live in production
-on Railway with a real Supabase project (migrations applied, RLS enabled, storage buckets
-created). The frontend is fully built (auth, dashboard, upload, session/DNA/debrief views,
-billing, settings) but **not yet deployed** — it currently only runs locally.
+telemetry-to-debrief pipeline exists, is unit-tested, and both the backend (Railway) and
+frontend (Vercel) are live in production against a real Supabase project (migrations
+applied, RLS enabled, storage buckets created).
 
 **What's done:**
 - [x] Monorepo structure, Next.js 14 frontend, FastAPI backend, Celery pipeline skeleton
@@ -116,32 +115,36 @@ billing, settings) but **not yet deployed** — it currently only runs locally.
 - [x] Registration / login / password reset flows, authenticated app shell, dashboard
 - [x] Backend deployed to Railway (auto-deploy on push to `master`), CI green on both jobs
 - [x] Terms of Service / Privacy Policy pages, branded 404/error pages
+- [x] Frontend deployed to Vercel (`frontend-nine-xi-85.vercel.app`); Railway's
+      `FRONTEND_URL` and `CORS_ORIGINS` point at it and are verified working (preflight
+      returns `access-control-allow-origin` for the real domain)
+- [x] Redis-backed rate limiting on session upload and Stripe checkout/portal endpoints
+      (fails open if Redis is unreachable — see `app/middleware/rate_limit.py`)
 
 **Known Gaps — required before opening the beta:**
 - [ ] **Real `.ibt` file validation — PENDING INTEGRATION TESTING.** The parser, feature
       extractor, DNA engine, and coaching engine have only ever run against synthetically
-      constructed test fixtures (104 passing unit tests) — never a real iRacing telemetry
+      constructed test fixtures (104+ passing unit tests) — never a real iRacing telemetry
       dump. `backend/scripts/validate_ibt.py` exists specifically for this and has not yet
       been run. **Do not treat the parser as trustworthy until this has been done and its
       output manually cross-checked** against a remembered real session (track/car/lap
       times/top speed) — see the script's own docstring for what a clean run does and does
-      not prove.
+      not prove. Deliberately deferred until a real .ibt file is available (per user
+      decision) — do this before opening the beta.
 - [ ] Stripe checkout/portal/webhook has never been exercised against a real Stripe account
       (only a fake/mocked client in tests) — see `app/routers/subscriptions.py` docstring.
+      `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is still a placeholder on Vercel.
 - [ ] `delta_voice.py` (the Anthropic integration) has never called the real Anthropic API —
       only a fake injected client in tests.
-- [ ] Frontend is not deployed to Vercel yet. Once it is, Railway's `FRONTEND_URL` env var
-      needs to be set to the real domain (used to build Stripe redirect URLs), and CORS
-      needs to allow that origin (currently falls back to `config.py`'s default of
-      `trackdelta.ai`/`www.trackdelta.ai` — update if the real domain differs).
 - [ ] `tracks` / `track_corners` reference data is completely empty in production — corner-
       level coaching features degrade to session-level-only until this is seeded.
 - [ ] Email is fully handled by Supabase Auth's own shared SMTP (low rate limits, generic
       `noreply@...` sender). For beta-scale signups with a branded sender address, configure
       a custom SMTP provider in Supabase's Auth settings (Resend is already in the tech
       stack/config for this purpose, just not wired up anywhere yet).
-- [ ] No rate limiting on the API and no error-monitoring/observability tooling (e.g. Sentry)
-      configured yet.
+- [ ] No error-monitoring/observability tooling (e.g. Sentry) configured yet.
+- [ ] No custom domain — frontend is on its `*.vercel.app` URL, backend on its
+      `*.up.railway.app` URL. Fine for beta; revisit before public launch.
 
 ---
 
@@ -189,6 +192,7 @@ Delta is a calm, professional, trusted AI race engineer. When generating any Del
 | `backend/alembic/versions/001_initial_schema.py` | Full DB schema |
 | `backend/alembic/versions/002_row_level_security.py` | RLS policies (defense-in-depth; backend connects as table-owner and bypasses these) |
 | `backend/app/middleware/auth.py` | Supabase JWT verification (JWKS/HS256) |
+| `backend/app/middleware/rate_limit.py` | Redis-backed rate limiting (fails open) |
 | `backend/app/services/storage.py` | Supabase Storage integration |
 | `backend/pipeline/tasks/process_session.py` | Main Celery task orchestrator |
 | `backend/pipeline/parser/ibt_parser.py` | iRacing .ibt binary parser — **unvalidated against real data, see Known Gaps** |
