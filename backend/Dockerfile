@@ -39,4 +39,9 @@ COPY . .
 # branch also backgrounds scripts/healthcheck_stub.py, a bare 200-OK
 # responder — both services share the same railway.json healthcheckPath,
 # and the worker itself has no HTTP server of its own to answer it.
-CMD if [ "$PROCESS_TYPE" = "worker" ]; then python scripts/healthcheck_stub.py & celery -A pipeline.worker worker --loglevel=info; else uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}; fi
+#
+# --concurrency=2: Celery's prefork pool defaults to os.cpu_count(), which
+# was 48 on Railway's shared build hosts — 48 forked worker processes each
+# loading numpy/pandas/scipy immediately OOM-killed the container. 2 is
+# plenty for beta-scale upload volume.
+CMD if [ "$PROCESS_TYPE" = "worker" ]; then python scripts/healthcheck_stub.py & celery -A pipeline.worker worker --loglevel=info --concurrency=2; else uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}; fi
