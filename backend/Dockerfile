@@ -35,5 +35,8 @@ COPY . .
 # PROCESS_TYPE branches the same image between the web service and the
 # Celery worker service, both deployed from this one Dockerfile. Unset (or
 # any value other than "worker") keeps the original uvicorn behavior, so
-# the existing web service's deploy config needs no changes.
-CMD if [ "$PROCESS_TYPE" = "worker" ]; then celery -A pipeline.worker worker --loglevel=info; else uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}; fi
+# the existing web service's deploy config needs no changes. The worker
+# branch also backgrounds scripts/healthcheck_stub.py, a bare 200-OK
+# responder — both services share the same railway.json healthcheckPath,
+# and the worker itself has no HTTP server of its own to answer it.
+CMD if [ "$PROCESS_TYPE" = "worker" ]; then python scripts/healthcheck_stub.py & celery -A pipeline.worker worker --loglevel=info; else uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}; fi
