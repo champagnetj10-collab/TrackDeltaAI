@@ -23,6 +23,7 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const sessionExpired = searchParams.get('sessionExpired') === '1'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,6 +47,11 @@ function LoginForm() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to your account">
+      {sessionExpired && !error && (
+        <div role="status" className="bg-delta-600/10 border border-delta-600/30 rounded-lg px-4 py-3 mb-4 animate-fade-in">
+          <p className="text-delta-300 text-sm">Your session expired. Sign in again to pick up where you left off.</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="email"

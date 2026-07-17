@@ -93,6 +93,33 @@ def test_upload_url_enforces_free_tier_limit(client, fake_user):
     assert response.status_code == 402
 
 
+def test_upload_url_ignores_path_traversal_in_filename(client, monkeypatch):
+    captured_key = {}
+
+    def fake_generate(self, bucket, key, expiry_seconds=900):
+        captured_key["key"] = key
+        return f"https://storage.example/{bucket}/{key}"
+
+    monkeypatch.setattr(sessions_module.StorageService, "generate_upload_url", fake_generate)
+    response = client.post("/v1/sessions/upload-url", json={"filename": "../../etc/passwd.ibt"})
+    assert response.status_code == 200
+    assert ".." not in captured_key["key"]
+    assert "passwd" not in captured_key["key"]
+
+
+def test_upload_url_handles_unicode_filename_without_empty_key(client, monkeypatch):
+    captured_key = {}
+
+    def fake_generate(self, bucket, key, expiry_seconds=900):
+        captured_key["key"] = key
+        return f"https://storage.example/{bucket}/{key}"
+
+    monkeypatch.setattr(sessions_module.StorageService, "generate_upload_url", fake_generate)
+    response = client.post("/v1/sessions/upload-url", json={"filename": "🏎️ race day 🔥.ibt"})
+    assert response.status_code == 200
+    assert not captured_key["key"].endswith("/")
+
+
 def _create_session(db_session, user_id: uuid.UUID) -> SessionModel:
     session = SessionModel(id=uuid.uuid4(), user_id=user_id, raw_file_s3_key="users/x/sessions/y/z.ibt")
     db_session.add(session)

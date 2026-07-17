@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
+    def do_GET(self):  # noqa: N802 — dispatched by name from BaseHTTPRequestHandler, can't rename
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"ok")

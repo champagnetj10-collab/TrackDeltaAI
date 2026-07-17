@@ -3,7 +3,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -31,7 +31,10 @@ class UploadUrlResponse(BaseModel):
 
 
 class UploadCompleteRequest(BaseModel):
-    driver_note: str | None = None
+    # 280 to match the frontend's displayed character counter — the UI
+    # promises this limit, so the API should actually enforce its own
+    # contract rather than silently accepting anything sent directly.
+    driver_note: str | None = Field(default=None, max_length=280)
 
 
 class ProcessingStatusResponse(BaseModel):
@@ -75,8 +78,14 @@ def request_upload_url(
     db.refresh(session)
 
     # Generate presigned S3 URL
+    # Deliberately not using body.filename in the key: it's user-controlled
+    # and unsanitized (path segments like "../../etc/passwd.ibt" collapsed
+    # into an unintended key when tried; emoji/unicode filenames produced
+    # a key with an empty final segment). The original filename isn't
+    # displayed or stored anywhere downstream, so there's nothing to lose
+    # by not using it here.
     storage = StorageService()
-    s3_key = f"users/{current_user.id}/sessions/{session.id}/{body.filename}"
+    s3_key = f"users/{current_user.id}/sessions/{session.id}/session.ibt"
     presigned_url = storage.generate_upload_url(
         bucket=settings.s3_bucket_telemetry,
         key=s3_key,

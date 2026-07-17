@@ -13,11 +13,25 @@ export interface ApiFetchError extends Error {
   status?: number
 }
 
+// A stale/invalid session (expired refresh token, revoked session, etc.)
+// should never surface as a raw "Invalid token: ..." string in some
+// component's error banner — it means the user needs to sign in again.
+// This clears the dead session and sends them back to login, preserving
+// where they were so they land back on the same page after re-auth.
+async function redirectToLoginForExpiredSession(): Promise<never> {
+  const supabase = createClient()
+  await supabase.auth.signOut()
+  const redirectTo = window.location.pathname + window.location.search
+  window.location.href = `/login?sessionExpired=1&redirectTo=${encodeURIComponent(redirectTo)}`
+  // Navigation above unloads the page; this never actually resolves.
+  return new Promise<never>(() => {})
+}
+
 // Get auth token from Supabase session
 async function getAuthToken(): Promise<string> {
   const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) throw new Error('Not authenticated')
+  if (!session?.access_token) return redirectToLoginForExpiredSession()
   return session.access_token
 }
 
@@ -32,6 +46,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       ...options.headers,
     },
   })
+
+  if (res.status === 401) {
+    return redirectToLoginForExpiredSession()
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: { code: 'unknown', message: res.statusText } }))
