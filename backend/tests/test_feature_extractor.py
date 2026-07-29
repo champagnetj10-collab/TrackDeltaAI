@@ -177,10 +177,10 @@ def test_brake_delta_m_uses_reference_and_track_length(extractor: FeatureExtract
 
 def test_incident_rate_per_10_laps(extractor: FeatureExtractor) -> None:
     df_with_incident = make_lap_df()
-    df_with_incident["Incidents"] = 0
-    df_with_incident.loc[df_with_incident.index[-1], "Incidents"] = 2  # 2 incidents this lap
+    df_with_incident["PlayerCarMyIncidentCount"] = 0
+    df_with_incident.loc[df_with_incident.index[-1], "PlayerCarMyIncidentCount"] = 2  # 2 incidents this lap
     df_clean = make_lap_df()
-    df_clean["Incidents"] = 0
+    df_clean["PlayerCarMyIncidentCount"] = 0
 
     laps = {1: df_with_incident, 2: df_clean}
     lap_times_ms = {1: 90000, 2: 90000}

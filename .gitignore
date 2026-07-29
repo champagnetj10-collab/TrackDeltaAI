@@ -65,3 +65,6 @@ celerybeat.pid
 tmp/
 temp/
 uploads/
+
+# Real telemetry files for local manual validation (see backend/tests/fixtures/real/README.md)
+backend/tests/fixtures/real/*.ibt

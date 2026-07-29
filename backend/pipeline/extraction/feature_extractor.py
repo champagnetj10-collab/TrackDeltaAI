@@ -282,9 +282,11 @@ class FeatureExtractor:
             return 0.0
         total_incidents = 0.0
         for lap_df in clean_lap_dfs:
-            if "Incidents" in lap_df.columns and not lap_df.empty:
+            if "PlayerCarMyIncidentCount" in lap_df.columns and not lap_df.empty:
                 total_incidents += max(
-                    0.0, float(lap_df["Incidents"].iloc[-1]) - float(lap_df["Incidents"].iloc[0])
+                    0.0,
+                    float(lap_df["PlayerCarMyIncidentCount"].iloc[-1])
+                    - float(lap_df["PlayerCarMyIncidentCount"].iloc[0]),
                 )
         return (total_incidents / len(clean_lap_dfs)) * 10
 

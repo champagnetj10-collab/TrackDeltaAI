@@ -44,7 +44,7 @@ _ALL_CHANNELS = [
     ("YawRate", 4, "f", 4),
     ("PlayerCarClassPosition", 4, "i", 2),
     ("FuelLevel", 4, "f", 4),
-    ("Incidents", 4, "i", 2),
+    ("PlayerCarMyIncidentCount", 4, "i", 2),
 ]
 
 SAMPLE_YAML = """
@@ -118,7 +118,7 @@ def build_synthetic_ibt(
                 "YawRate": 0.0,
                 "PlayerCarClassPosition": 1,
                 "FuelLevel": 40.0,
-                "Incidents": incidents_count,
+                "PlayerCarMyIncidentCount": incidents_count,
             }
             row_values = [values[name] for name in channel_names]
             rows.append(struct.pack(row_format, *row_values))

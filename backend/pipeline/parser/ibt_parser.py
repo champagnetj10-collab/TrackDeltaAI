@@ -18,7 +18,7 @@ Required channels (60 Hz) — see Driver DNA Technical Spec Section 2:
     Speed, Throttle, Brake, SteeringWheelAngle, Gear, RPM, LapDistPct, Lap,
     LapCurrentLapTime, LapLastLapTime, LapBestLapTime, SessionTime,
     VelocityX, VelocityY, YawRate, PlayerCarClassPosition, FuelLevel,
-    Incidents
+    PlayerCarMyIncidentCount
 
 Reference
 ---------
@@ -73,7 +73,7 @@ REQUIRED_CHANNELS: tuple[str, ...] = (
     "Speed", "Throttle", "Brake", "SteeringWheelAngle", "Gear", "RPM",
     "LapDistPct", "Lap", "LapCurrentLapTime", "LapLastLapTime",
     "LapBestLapTime", "SessionTime", "VelocityX", "VelocityY", "YawRate",
-    "PlayerCarClassPosition", "FuelLevel", "Incidents",
+    "PlayerCarClassPosition", "FuelLevel", "PlayerCarMyIncidentCount",
 )
 
 # Channels without which lap segmentation cannot proceed at all.
@@ -416,7 +416,7 @@ class IbtParser:
         up from zero within a lap, per the SDK). The first and last laps are
         always treated as out-lap/in-lap and excluded from clean timing —
         DNA Spec §4.1. A lap is otherwise clean unless its time exceeds 115%
-        of the best candidate lap, its `Incidents` counter increased during
+        of the best candidate lap, its `PlayerCarMyIncidentCount` counter increased during
         the lap, or its `SessionTime` shows a gap greater than 2 seconds.
 
         Returns
@@ -464,9 +464,9 @@ class IbtParser:
 
             lap_df = laps[lap_num]
 
-            if "Incidents" in lap_df.columns and not lap_df.empty:
-                incidents_delta = float(lap_df["Incidents"].iloc[-1]) - float(
-                    lap_df["Incidents"].iloc[0]
+            if "PlayerCarMyIncidentCount" in lap_df.columns and not lap_df.empty:
+                incidents_delta = float(lap_df["PlayerCarMyIncidentCount"].iloc[-1]) - float(
+                    lap_df["PlayerCarMyIncidentCount"].iloc[0]
                 )
                 if incidents_delta > 0:
                     continue
