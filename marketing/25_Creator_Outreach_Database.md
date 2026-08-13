@@ -67,6 +67,44 @@ message with a name swapped in; that is the exact thing this campaign is trying 
 
 ---
 
+### A3. Constantinos — Lovely Sim Racing
+| Field | Value |
+|---|---|
+| Platform | YouTube + store + GitHub + Discord |
+| Handle | @LovelySimRacing / lsr.gg |
+| Audience | 8.02K YouTube subs, 310 videos; own Discord |
+| Primary content | Sim racing + **builds sim racing software** |
+| Audience fit | **Very high** — and unusually valuable as a peer builder |
+| Why TrackDelta is relevant | He isn't just a creator — he ships telemetry software. Built **Lovely Dashboard** (SimHub dashboard + stream overlay, open source on GitHub), **Lovely Pit Wall** (advanced dashboard with a dedicated live Telemetry Screen), and **TeamLINQ** (real-time teammate telemetry sharing). He has direct, hard-won knowledge of what sim racers actually do with data vs. what builders assume. His products solve *live display*; TrackDelta is *after-the-fact interpretation* — complementary, not competing. |
+| Public email | `store@lsr.gg` (published on store contact page) |
+| Public profile | store.lsr.gg · github.com/Lovely-Sim-Racing · lsr.gg/discord |
+| Preferred contact | Email published, but Discord may suit founder-to-founder better |
+| Date contacted | — |
+| Follow-up date | — |
+| Response | — |
+| Status | `DRAFTED` (Gmail) |
+| Notes | Runs Pro/Gold paid membership tiers, so he understands monetizing sim racing software. Most valuable feedback from him is on *premise*, not output. Caveat: `store@lsr.gg` is a storefront address — may route to support rather than him personally. Consider Discord as primary. |
+
+### A4. Chris Rogers — Chris Rogers Sim Racing
+| Field | Value |
+|---|---|
+| Platform | YouTube |
+| Handle | @chrisrogerssimracing |
+| Audience | 8.41K subs, 389 videos |
+| Primary content | Race videos with own commentary, highlights, self-analysis |
+| Audience fit | **High** — a genuine target *user*, not a competitor |
+| Why TrackDelta is relevant | Races across classes (recent uploads: GT3 at Suzuka, LMP3 at Monza, Alpine A110 Cup at Portimão) and narrates his own mistakes on camera. Explicitly positions himself as *not* an expert — "it's very unlikely you'll find top tips and techniques here… the reality of sim racing gameplay… all the fun and frustration." That's exactly the driver TrackDelta is for: races constantly, analyses himself informally, has no coaching business to defend. |
+| Public email | `NOT VERIFIED` — YouTube About is CAPTCHA-gated; only buymeacoffee link is public |
+| Public profile | youtube.com/@chrisrogerssimracing |
+| Preferred contact | Needs a route — YouTube About (manual), or community post |
+| Date contacted | — |
+| Follow-up date | — |
+| Response | — |
+| Status | `RESEARCHED` — copy ready, blocked on contact route |
+| Notes | Highest "likely to actually use it and reply honestly" score of anyone researched. Worth manually retrieving his business email from YouTube About. |
+
+---
+
 ## Tier B — Good fit (in target band, general sim racing with technique lean)
 
 These are all **`NEEDS RESEARCH`** — they are in the right size band and the right niche,
@@ -77,19 +115,17 @@ Do not send anything from this tier until that's done.
 |---|---|---|---|---|---|---|
 | B1 | Soap — Sim Racer | YouTube | ~42K | General sim racing, cars + gaming | YouTube About (CAPTCHA-gated) | `NEEDS RESEARCH` |
 | B2 | Yorkie065 | YouTube | ~41K | Guides, tutorials, commentary; Trak Racer ambassador | YouTube About | `NEEDS RESEARCH` |
-| B3 | Sim Racing Corner | YouTube | ~34K | Reviews, tech, guides, modding | simracingcorner.com | `NEEDS RESEARCH` |
-| B4 | Apex Racing TV | YouTube | ~18K | iRacing league broadcasts | apexracingtv.com | `NEEDS RESEARCH` |
-| B5 | La Broca Sim Racing | YouTube | ~15K | Online sim racing | YouTube About | `NEEDS RESEARCH` |
-| B6 | Chris Rogers Sim Racing | YouTube | ~8K | Race vlogs w/ own commentary, "highs and lows" | YouTube About | `NEEDS RESEARCH` |
-| B7 | Lovely Sim Racing | YouTube + IG | ~8K | Learning-in-public, community tools | IG @lovelysimracing | `NEEDS RESEARCH` |
-| B8 | Pitlanes Sim Racing | YouTube | ~6K | Multi-sim coverage, VR perspective | protonmail (masked) | `NEEDS RESEARCH` |
+| B3 | Apex Racing TV | YouTube | ~18K | iRacing league broadcasts | apexracingtv.com | `NEEDS RESEARCH` |
+| B4 | La Broca Sim Racing | YouTube | ~15K | Online sim racing | YouTube About | `NEEDS RESEARCH` |
+| B5 | Pitlanes Sim Racing | YouTube | ~6K | Multi-sim coverage, VR perspective | protonmail (masked) | `NEEDS RESEARCH` |
 
-**On B6 / B7 specifically:** both frame themselves as *still learning* rather than as experts
-(Chris Rogers: "it's very unlikely you'll find top tips here… the reality of sim racing";
-Lovely Sim Racing: "Still learning and trying to get faster one turn at a time"). That is
-arguably a *better* fit for a beta tester than a coach — they have no competing product to
-defend, and their audience is exactly the person priced out of real coaching. Rank these
-higher than raw follower count suggests.
+---
+
+## Tier C — Verified poor fit (do not contact)
+
+| Creator | Audience | Why not |
+|---|---|---|
+| Sim Racing Corner | 34.2K, 1.7K videos | **Checked their actual recent uploads — it's a hardware review channel.** Last month: Logitech racing adaptor review, SIMNET Hydro-Link Pro kit, SIMAGIC Zeus Sport wheel, 3DRAP elastomer brake mod, PXN GT ONE. Their audience is buying gear, not diagnosing driving technique. Right subscriber band, wrong audience intent. Good example of why follower count alone is a bad filter. |
 
 ---
 

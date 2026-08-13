@@ -95,6 +95,45 @@ before he has to, and it asks for criticism rather than promotion. No "I love yo
 
 ---
 
+**Body — Constantinos / Lovely Sim Racing version (READY, in Gmail drafts):**
+Peer-builder framing rather than creator framing. Opens on the software he's actually shipped
+(Lovely Dashboard, Pit Wall telemetry screen, TeamLINQ), positions TrackDelta as a different
+job (live display vs. after-the-fact interpretation) rather than a competitor, and asks for
+feedback on *premise* rather than output. Full text in Gmail drafts.
+
+**Body — Chris Rogers version (READY, blocked on contact route):**
+
+> Hi Chris,
+>
+> I've been going through your recent uploads — the GT3 race at Suzuka, the LMP3 one at Monza,
+> the Alpine A110 Cup round at Portimão. What stuck with me is that you narrate your own
+> mistakes while they're happening, and you're upfront on your channel that people shouldn't
+> come to you for expert technique tips — that it's the real version, fun and frustration
+> included.
+>
+> That's exactly why I want your take rather than a coach's.
+>
+> I'm building TrackDelta AI. You upload your iRacing `.ibt` file and it writes you a debrief.
+> The bit I care about isn't "you braked 18m early at turn 7" — plenty of tools do that. It's
+> trying to work out *why* you drive the way you do across many sessions. Whether you're
+> naturally a late braker who needs a setup that tolerates it, or whether your consistency
+> specifically falls apart under race pressure but not in practice.
+>
+> You're the driver I'm actually building this for. You race constantly, across a bunch of
+> different cars, and you're already doing the analysis informally on camera. If a tool can't
+> tell you something useful about your own driving that you hadn't already worked out yourself,
+> it's not worth anything — and you'd know that faster than most people.
+>
+> Not asking you to promote it. Free access, upload some real telemetry, tell me where it's
+> wrong or where it's just stating the obvious. Blunt is genuinely more useful to me than kind
+> here.
+>
+> Worth a look?
+>
+> — Tristen
+
+---
+
 ## Email 1 — Generic skeleton (for creators after real research)
 
 Fill the bracketed parts from **actual watched content**. If you can't fill `[SPECIFIC]`
