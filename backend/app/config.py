@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     # --- Email (Resend) ---
     resend_api_key: str = ""
-    email_from: str = "delta@trackdelta.ai"
+    email_from: str = "delta@trackdeltaai.com"
 
     # --- Business rules ---
     free_tier_monthly_uploads: int = 3
@@ -74,10 +74,19 @@ class Settings(BaseSettings):
     min_laps_for_analysis: int = 5
 
     # --- CORS ---
+    # Fallback only — production sets CORS_ORIGINS explicitly on Railway.
+    # These defaults exist so local dev works with no .env, and so that a
+    # cleared/misread env var degrades to something correct rather than
+    # something wrong. 3000 is Next.js's default; 3001 is what this repo's
+    # .claude/launch.json actually starts the frontend on.
+    # NOTE: the domain is trackdeltaai.com (not trackdelta.ai) — an earlier
+    # default had the wrong domain here, which meant that if CORS_ORIGINS
+    # were ever unset, production would silently block its own frontend.
     cors_origins: list[str] = [
         "http://localhost:3000",
-        "https://trackdelta.ai",
-        "https://www.trackdelta.ai",
+        "http://localhost:3001",
+        "https://trackdeltaai.com",
+        "https://www.trackdeltaai.com",
     ]
 
     # --- Frontend (for building Stripe redirect URLs) ---
